@@ -1,0 +1,6 @@
+exp_name 
+train_path
+test_path
+train_frac 
+base_dir
+model_name
