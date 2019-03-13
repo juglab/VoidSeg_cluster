@@ -115,7 +115,7 @@ def main():
                 'type': 'input',
                 'name': 'axes',
                 'message': 'axes',
-                'default': 'YXC'
+                'default': 'SYXC'
             },
             {
                 'type': 'input',
