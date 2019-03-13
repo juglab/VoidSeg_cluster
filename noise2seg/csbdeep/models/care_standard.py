@@ -184,7 +184,7 @@ class CARE(object):
         if optimizer is None:
             from keras.optimizers import Adam
             optimizer = Adam(lr=self.config.train_learning_rate)
-        self.callbacks = train.prepare_model(self.keras_model, optimizer, self.config.train_loss, self.config.train_scheme, **kwargs)
+        self.callbacks = train.prepare_model(self.keras_model, optimizer, self.config.train_loss, self.config.train_scheme, use_denoising=self.config.use_denoising, **kwargs)
 
         if self.basedir is not None:
             if self.config.train_checkpoint is not None:

@@ -143,6 +143,7 @@ class Config(argparse.Namespace):
         self.n2v_patch_shape       = (64, 64) if self.n_dim==2 else (64, 64, 64)
         self.n2v_manipulator       = 'uniform_withCP'
         self.n2v_neighborhood_radius = '5'
+        self.use_denoising         = 1
 
         # disallow setting 'n_dim' manually
         try:
@@ -219,6 +220,7 @@ class Config(argparse.Namespace):
         )
         ok['n2v_manipulator']       = self.n2v_manipulator in ['normal_withoutCP', 'uniform_withCP', 'normal_additive',
                                                                'normal_fitted', 'identity']
+        ok['use_denoising']         = _is_int(self.use_denoising, 0, 1)
 
         if return_invalid:
             return all(ok.values()), tuple(k for (k,v) in ok.items() if not v)
