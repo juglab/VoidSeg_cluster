@@ -71,8 +71,13 @@ use_denoising = conf['use_denoising']
 train_files = np.load(exp_params['train_path'])
 X_train = train_files['X_train']
 Y_train = train_files['Y_train']
-X_val = cutHalf(train_files['X_val'][:640, :640], 2).astype(np.float32)
-Y_val = cutHalf(train_files['Y_val'][:640, :640], 2).astype(np.float32)
+if 'CTC' in exp_params['exp_name']:
+    X_val = cutHalf(train_files['X_val'][:640, :640], 2).astype(np.float32)
+    Y_val = cutHalf(train_files['Y_val'][:640, :640], 2).astype(np.float32)
+else:
+    X_val = train_files['X_val'].astype(np.float32)
+    Y_val = train_files['Y_val'].astype(np.float32)
+    
 mean, std = np.mean(X_train), np.std(X_train)
 X_train = normalize(X_train, mean, std)
 X_val = normalize(X_val, mean, std)

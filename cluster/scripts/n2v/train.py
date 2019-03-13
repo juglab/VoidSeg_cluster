@@ -60,7 +60,8 @@ if 'augment' in exp_params.keys():
         print('Training data size after augmentation', X.shape)
 
 X_val = train_files['X_val']
-X_val = cutHalf(X_val[:640,:640],2)
+if 'CTC' in  exp_params['exp_name']:
+    X_val = cutHalf(X_val[:640,:640],2)
 
 #Config from json file
 with open(exp_params['model_name']+'/config.json', 'r') as f:
