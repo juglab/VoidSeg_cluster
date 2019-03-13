@@ -1,13 +1,8 @@
-from n2v.models import Config, CARE
+from csbdeep.models import Config, CARE
 import numpy as np
-from n2v.utils import plot_some, plot_history
-from n2v.utils.n2v_utils import manipulate_val_data
-from scipy import ndimage
-import urllib
 
-import os
-import zipfile
-import json
+from scipy import ndimage
+
 from os.path import join
 from skimage import io
 
