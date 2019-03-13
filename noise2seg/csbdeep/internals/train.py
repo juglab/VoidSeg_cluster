@@ -147,8 +147,8 @@ class Noise2VoidDataWrapper(Sequence):
                 y_val.append(self.Y_Batches[(j, *coords[k], 0)])
                 x_val.append(self.value_manipulation(self.X_Batches[j, ..., 0], coords[k]))
 
-            self.Y_Batches[j] *= 0
 
+            self.Y_Batches[j,...,:2] *= 0
             for k in range(len(coords)):
                 self.Y_Batches[(j, *coords[k], 0)] = y_val[k]
                 self.Y_Batches[(j, *coords[k], 1)] = 1
