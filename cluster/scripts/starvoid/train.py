@@ -96,11 +96,11 @@ if 'augment' in exp_params.keys():
     if exp_params['augment']:
         print('augmenting training data')
         X_ = X_train.copy()
-        X_train = np.concatenate((X_train, np.rot90(X_, 2, (1, 2))))
-        X_train = np.concatenate((X_train, np.flip(X_train)))
+        X_train_aug = np.concatenate((X_train, np.rot90(X_, 2, (1, 2))))
+        X_train_aug = np.concatenate((X_train_aug, np.flip(X_train_aug, axis=1), np.flip(X_train_aug, axis=2)))
         Y_ = Y_train.copy()
-        Y_train = np.concatenate((Y_train, np.rot90(Y_, 2, (1, 2))))
-        Y_train = np.concatenate((Y_train, np.flip(Y_train)))
+        Y_train_aug = np.concatenate((Y_train, np.rot90(Y_, 2, (1, 2))))
+        Y_train_aug = np.concatenate((Y_train_aug, np.flip(Y_train_aug, axis=1), np.flip(Y_train_aug, axis=2)))
         print('Training data size after augmentation', X_train.shape)
         print('Training data size after augmentation', Y_train.shape)
 
