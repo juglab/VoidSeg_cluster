@@ -98,7 +98,11 @@ if 'augment' in exp_params.keys():
         X_ = X_train.copy()
         X_train = np.concatenate((X_train, np.rot90(X_, 2, (1, 2))))
         X_train = np.concatenate((X_train, np.flip(X_train)))
+        Y_ = Y_train.copy()
+        Y_train = np.concatenate((Y_train, np.rot90(Y_, 2, (1, 2))))
+        Y_train = np.concatenate((Y_train, np.flip(Y_train)))
         print('Training data size after augmentation', X_train.shape)
+        print('Training data size after augmentation', Y_train.shape)
 
 # prepare validation data
 X_validation = X_val[..., np.newaxis]
