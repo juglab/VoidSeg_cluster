@@ -79,13 +79,13 @@ mean, std = np.mean(X), np.std(X)
 X = normalize(X, mean, std)
 
 # We concatenate an extra channel filled with zeros. It will be internally used for the masking.
-Y = np.concatenate((X, np.zeros(X.shape)), axis=3)
+Y = np.concatenate((X, np.zeros(X.shape, dtype=np.float32)), axis=3)
 
 X_val = X_val[...,np.newaxis]
 X_val = normalize(X_val, mean, std)
 
 # 1. Option
-Y_val = np.concatenate((X_val.copy(), np.zeros(X_val.shape)), axis=3)
+Y_val = np.concatenate((X_val.copy(), np.zeros(X_val.shape, dtype=np.float32)), axis=3)
 manipulate_val_data(X_val, Y_val,num_pix=int(num_pix*X_val.shape[1]*X_val.shape[2]/float(pixelsInPatch)) , shape=(X_val.shape[1], X_val.shape[2]))
 
 # 2. Option
