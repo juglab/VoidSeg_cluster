@@ -38,7 +38,7 @@ model = CARE(None, name= exp_params['model_name'], basedir= exp_params['base_dir
 for i in range(X.shape[0]):
     predicton = model.predict(X[i][..., np.newaxis], axes='YXC',normalizer=None )
     prediction_exp = np.exp(predicton[...,1:])
-    prediction_seg = predicton_exp/np.sum(predicton_exp, axis = 2)[...,np.newaxis]
+    prediction_seg = prediction_exp/np.sum(prediction_exp, axis = 2)[...,np.newaxis]
     predicton_denoise = denormalize(predicton[...,0], mean, std)
     prediction_seg = prediction_seg[...,2]
     pred_thresholded = predicton[...,2]>0.5
