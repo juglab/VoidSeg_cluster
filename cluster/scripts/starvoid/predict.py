@@ -37,7 +37,7 @@ for i in range(X.shape[0]):
     prediction_seg = prediction_exp/np.sum(prediction_exp, axis = 2)[...,np.newaxis]
     predicton_denoise = denormalize(denoised, mean, std)
     prediction_seg = prediction_seg[...,1]
-    pred_thresholded = prediction_seg[...,1]>0.5
+    pred_thresholded = prediction_seg>0.5
     labels, nb = ndimage.label(pred_thresholded)
 #    predictions.append(pred)
     io.imsave(join(exp_params['base_dir'], 'mask'+str(i).zfill(3)+'.tif'), labels)
