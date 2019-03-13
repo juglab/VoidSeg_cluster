@@ -100,7 +100,7 @@ def main():
                 'type': 'input',
                 'name': 'train_frac',
                 'message': 'Training data fractions in x%:',
-                'default': '100',
+                'default': '1,2,3,5,10,20,30,40,50,60,70,80,90,100',
                 'validate': TrainFracValidator,
                 'filter': lambda val: [int(x) for x in val.split(',')]
             },
@@ -128,7 +128,7 @@ def main():
                 'type': 'input',
                 'name': 'n_channel_out',
                 'message': 'n_channel_out',
-                'default': '1',
+                'default': '4',
                 'filter': lambda val: int(val)
             },
             {
@@ -325,7 +325,7 @@ def start_experiment(exp_conf, net_conf, run_dir):
         with open(join('../..', 'outdata', exp_conf['exp_name'],run_dir, exp_conf['model_name'],  'config.json'), 'w') as file:
             json.dump(net_conf, file)
 
-        os.makedirs(join('../..', 'outdata', exp_conf['exp_name'], run_dir,'scripts', 'n2v'), mode=0o775)
+        os.makedirs(join('../..', 'outdata', exp_conf['exp_name'], run_dir,'scripts', 'starvoid'), mode=0o775)
         os.makedirs(join('../..', 'outdata', exp_conf['exp_name'], run_dir,'scripts', 'utils'), mode=0o775)
 
         os.system('chmod -R 775 '+'../../outdata/'+exp_conf['exp_name'])
@@ -334,8 +334,8 @@ def start_experiment(exp_conf, net_conf, run_dir):
 
 
 def run(exp_conf, net_conf, run_dir):
-    for f in glob.glob(join('scripts', 'n2v', '*')):
-        cp(f, join('../..', 'outdata', exp_conf['exp_name'], run_dir,'scripts', 'n2v', basename(f)))
+    for f in glob.glob(join('scripts', 'starvoid', '*')):
+        cp(f, join('../..', 'outdata', exp_conf['exp_name'], run_dir,'scripts', 'starvoid', basename(f)))
 
     for f in glob.glob(join('scripts', 'utils', '*')):
         cp(f, join('../..', 'outdata', exp_conf['exp_name'], run_dir,'scripts', 'utils', basename(f)))
@@ -345,7 +345,7 @@ def run(exp_conf, net_conf, run_dir):
 
     os.chdir(join('../..', 'outdata', exp_conf['exp_name'], run_dir))
     print('Current directory:', os.getcwd())
-    cmd = "sbatch --exclude=r02n01 -p gpu --gres=gpu:1 --mem-per-cpu 256000 -t 48:00:00 --export=ALL -J StarVoid -o "+log_file+" scripts/n2v/start_job.sh"
+    cmd = "sbatch --exclude=r02n01 -p gpu --gres=gpu:1 --mem-per-cpu 256000 -t 48:00:00 --export=ALL -J StarVoid -o "+log_file+" scripts/starvoid/start_job.sh"
     print(cmd)
     os.system(cmd)
 
