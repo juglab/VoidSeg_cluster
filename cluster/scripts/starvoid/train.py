@@ -117,7 +117,7 @@ Y_validation = np.concatenate((Y_validation, Y_val_oneHot), axis=3)
 model = CARE(None, name= exp_params['model_name'], basedir= exp_params['base_dir'])
 print(conf)
 
-hist = model.train(X_train,Y_train,validation_data=(X_validation,Y_validation))
+hist = model.train(X_train[..., np.newaxis],Y_train,validation_data=(X_validation,Y_validation))
 
 with open(join(exp_params['base_dir'], exp_params['model_name'], 'history_' + exp_params['model_name'] + '.dat'),
           'wb') as file_pi:
