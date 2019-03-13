@@ -142,7 +142,7 @@ def main():
                 'type': 'input',
                 'name': 'unet_n_depth',
                 'message': 'unet_n_depth',
-                'default': '3',
+                'default': '2',
                 'filter': lambda val: int(val)
             },
             {
@@ -247,7 +247,7 @@ def main():
                 'type': 'input',
                 'name': 'n2v_num_pix',
                 'message': 'n2v_num_pix',
-                'default': '256',
+                'default': '64',
                 'validate': lambda val: int(val) > 0,
                 'filter': lambda val: int(val)
             },
@@ -255,7 +255,7 @@ def main():
                 'type': 'input',
                 'name': 'n2v_patch_shape',
                 'message': 'n2v_patch_shape',
-                'default': '128, 128',
+                'default': '64, 64',
                 'filter': lambda val: tuple([int(x) for x in val.split(', ')])
             },
             {
