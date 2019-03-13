@@ -1,2 +1,2 @@
-# import train
+import train
 import predict
