@@ -33,7 +33,7 @@ class ParameterDecayCallback(Callback):
 
 
 def prepare_model(model, optimizer, loss, training_scheme='CARE', metrics=('mse','mae'),
-                  loss_bg_thresh=0, loss_bg_decay=0.06, Y=None):
+                  loss_bg_thresh=0, loss_bg_decay=0.06, Y=None, use_denoising=1):
     """ TODO """
 
     from keras.optimizers import Optimizer
@@ -43,7 +43,7 @@ def prepare_model(model, optimizer, loss, training_scheme='CARE', metrics=('mse'
         loss_standard   = eval('loss_%s()'%loss)
     elif training_scheme == 'Noise2Void':
         if loss == 'mse':
-            loss_standard = eval('loss_noise2void()')
+            loss_standard = eval('loss_noise2void(use_denoising=%s)'%use_denoising)
         elif loss == 'mae':
             loss_standard = eval('loss_noise2voidAbs()')
 
@@ -155,6 +155,7 @@ class Noise2VoidDataWrapper(Sequence):
 
                 self.X_Batches[(j, *coords[k])] = x_val[k]
 
+
         return self.X_Batches[idx], self.Y_Batches[idx]
 
     @staticmethod
@@ -164,6 +165,7 @@ class Noise2VoidDataWrapper(Sequence):
             x_start = np.random.randint(0, range[1] + 1)
             X_Batches[j] = X[j, y_start:y_start + shape[0], x_start:x_start + shape[1]]
             Y_Batches[j] = Y[j, y_start:y_start + shape[0], x_start:x_start + shape[1]]
+
 
     @staticmethod
     def __subpatch_sampling3D__(X, Y, X_Batches, Y_Batches, indices, range, shape):
