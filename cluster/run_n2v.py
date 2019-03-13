@@ -175,7 +175,7 @@ def main():
                 'type': 'input',
                 'name': 'train_epochs',
                 'message': 'train_epochs',
-                'default': '100',
+                'default': '200',
                 'validate': lambda val: int(val) > 0,
                 'filter': lambda val: int(val)
             },
