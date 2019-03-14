@@ -97,10 +97,16 @@ def loss_thresh_weighted_decay(loss_per_pixel, thresh, w1, w2, alpha):
 def loss_noise2void(use_denoising=1):
     def n2v_mse(y_true, y_pred):
         target, mask, bg, fg, b = tf.split(y_true, 5, axis=len(y_true.shape) - 1)
-        denoised, pred_bg, pred_fg, pred_b = tf.split(y_pred, 4, axis=len(y_pred.shape)-1)
+        denoised, pred_bg, pred_fg, pred_b = tf.split(y_pred, 4, axis=len(y_pred.shape) - 1)
 
-        loss = use_denoising*(tf.reduce_sum(K.square(target - denoised * mask)) / tf.reduce_sum(
-            mask)) + K.mean(cross_entropy(logits=tf.reshape(tf.stack([pred_bg, pred_fg, pred_b], axis=3), [-1, 3]), labels=tf.reshape(tf.stack([bg, fg, b], axis=3), [-1, 3])))
+        class_targets = tf.stack([bg, fg, b], axis=3)
+        shape = tf.cast(tf.shape(y_true), tf.float32)
+        denoising_factor = tf.reduce_sum(class_targets) / (shape[0] * shape[1] * shape[2])
+
+        loss = denoising_factor * use_denoising * (tf.reduce_sum(K.square(target - denoised * mask)) / tf.reduce_sum(
+            mask)) + tf.reduce_sum(
+            cross_entropy(logits=tf.reshape(tf.stack([pred_bg, pred_fg, pred_b], axis=3), [-1, 3]),
+                          labels=tf.reshape(class_targets, [-1, 3]))) / tf.reduce_sum(class_targets)
 
         return loss
 
