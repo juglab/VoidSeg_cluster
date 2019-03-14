@@ -91,11 +91,11 @@ Y_train = np.concatenate(
 
 # Select fraction
 train_frac = int(np.round((exp_params['train_frac'] / 100) * X_train.shape[0]))
-if use_denoising:
-    Y_train[train_frac:, ..., 1:] *= 0
-else:
-    X_train = X_train[:train_frac]
-    Y_train = Y_train[:train_frac]
+# if use_denoising:
+#     Y_train[train_frac:, ..., 1:] *= 0
+# else:
+X_train = X_train[:train_frac]
+Y_train = Y_train[:train_frac]
 
 if 'augment' in exp_params.keys():
     if exp_params['augment']:
