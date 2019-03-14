@@ -1,13 +1,8 @@
-from n2v.models import Config, CARE
+from csbdeep.models import Config, CARE
 import numpy as np
-from n2v.utils import plot_some, plot_history
-from n2v.utils.n2v_utils import manipulate_val_data
-from scipy import ndimage
-import urllib
 
-import os
-import zipfile
-import json
+from scipy import ndimage
+
 from os.path import join
 from skimage import io
 
@@ -36,13 +31,18 @@ X = normalize(X_test, mean, std)
 model = CARE(None, name= exp_params['model_name'], basedir= exp_params['base_dir'])
 
 for i in range(X.shape[0]):
-    predicton = model.predict(X[i][..., np.newaxis], axes='YXC',normalizer=None )
-    prediction_exp = np.exp(predicton[...,1:])
-    prediction_seg = predicton_exp/np.sum(predicton_exp, axis = 2)[...,np.newaxis]
-    predicton_denoise = denormalize(predicton[...,0], mean, std)
-    prediction_seg = prediction_seg[...,2]
-    pred_thresholded = predicton[...,2]>0.5
+    prediction = model.predict(X[i], axes='YX',normalizer=None )
+    denoised = prediction[...,0]
+    prediction_exp = np.exp(prediction[...,1:])
+    prediction_seg = prediction_exp/np.sum(prediction_exp, axis = 2)[...,np.newaxis]
+    predicton_denoise = denormalize(denoised, mean, std)
+    prediction_bg = prediction_seg[...,0]
+    prediction_fg = prediction_seg[...,1]
+    prediction_b = prediction_seg[...,2]
+    pred_thresholded = prediction_seg>0.5
     labels, nb = ndimage.label(pred_thresholded)
 #    predictions.append(pred)
     io.imsave(join(exp_params['base_dir'], 'mask'+str(i).zfill(3)+'.tif'), labels)
-    io.imsave(join(exp_params['base_dir'], 'foreground'+str(i).zfill(3)+'.tif'), prediction_seg)
+    io.imsave(join(exp_params['base_dir'], 'foreground'+str(i).zfill(3)+'.tif'), prediction_fg)
+    io.imsave(join(exp_params['base_dir'], 'background'+str(i).zfill(3)+'.tif'), prediction_bg)
+    io.imsave(join(exp_params['base_dir'], 'border'+str(i).zfill(3)+'.tif'), prediction_b)

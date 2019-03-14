@@ -132,13 +132,6 @@ def main():
                 'filter': lambda val: int(val)
             },
             {
-                'type': 'list',
-                'name': 'unet_residual',
-                'message': 'unet_residual',
-                'choices': ['True', 'False'],
-                'filter': lambda val: val == 'True'
-            },
-            {
                 'type': 'input',
                 'name': 'unet_n_depth',
                 'message': 'unet_n_depth',
@@ -182,7 +175,7 @@ def main():
                 'type': 'input',
                 'name': 'train_epochs',
                 'message': 'train_epochs',
-                'default': '100',
+                'default': '200',
                 'validate': lambda val: int(val) > 0,
                 'filter': lambda val: int(val)
             },
@@ -281,6 +274,7 @@ def main():
 
         config = prompt(questions)
         config['probabilistic'] = False
+        config['unet_residual'] = False
         pwd = os.getcwd()
         for p in config['train_frac']:
             os.chdir(pwd)

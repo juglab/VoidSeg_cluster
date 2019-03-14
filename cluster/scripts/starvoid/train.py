@@ -71,8 +71,13 @@ use_denoising = conf['use_denoising']
 train_files = np.load(exp_params['train_path'])
 X_train = train_files['X_train']
 Y_train = train_files['Y_train']
-X_val = cutHalf(train_files['X_val'][:640, :640], 2).astype(np.float32)
-Y_val = cutHalf(train_files['Y_val'][:640, :640], 2).astype(np.float32)
+if 'CTC' in exp_params['exp_name']:
+    X_val = cutHalf(train_files['X_val'][:640, :640], 2).astype(np.float32)
+    Y_val = cutHalf(train_files['Y_val'][:640, :640], 2).astype(np.float32)
+else:
+    X_val = train_files['X_val'].astype(np.float32)
+    Y_val = train_files['Y_val'].astype(np.float32)
+    
 mean, std = np.mean(X_train), np.std(X_train)
 X_train = normalize(X_train, mean, std)
 X_val = normalize(X_val, mean, std)
@@ -96,9 +101,13 @@ if 'augment' in exp_params.keys():
     if exp_params['augment']:
         print('augmenting training data')
         X_ = X_train.copy()
-        X_train = np.concatenate((X_train, np.rot90(X_, 2, (1, 2))))
-        X_train = np.concatenate((X_train, np.flip(X_train)))
+        X_train_aug = np.concatenate((X_train, np.rot90(X_, 2, (1, 2))))
+        X_train_aug = np.concatenate((X_train_aug, np.flip(X_train_aug, axis=1), np.flip(X_train_aug, axis=2)))
+        Y_ = Y_train.copy()
+        Y_train_aug = np.concatenate((Y_train, np.rot90(Y_, 2, (1, 2))))
+        Y_train_aug = np.concatenate((Y_train_aug, np.flip(Y_train_aug, axis=1), np.flip(Y_train_aug, axis=2)))
         print('Training data size after augmentation', X_train.shape)
+        print('Training data size after augmentation', Y_train.shape)
 
 # prepare validation data
 X_validation = X_val[..., np.newaxis]
@@ -117,7 +126,7 @@ Y_validation = np.concatenate((Y_validation, Y_val_oneHot), axis=3)
 model = CARE(None, name= exp_params['model_name'], basedir= exp_params['base_dir'])
 print(conf)
 
-hist = model.train(X_train,Y_train,validation_data=(X_validation,Y_validation))
+hist = model.train(X_train[..., np.newaxis],Y_train,validation_data=(X_validation,Y_validation))
 
 with open(join(exp_params['base_dir'], exp_params['model_name'], 'history_' + exp_params['model_name'] + '.dat'),
           'wb') as file_pi:
