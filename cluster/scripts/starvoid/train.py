@@ -123,6 +123,19 @@ manipulate_val_data(X_validation, Y_validation, num_pix=int(num_pix * X_validati
 
 Y_validation = np.concatenate((Y_validation, Y_val_oneHot), axis=3)
 
+# Augment validation
+if 'augment' in exp_params.keys():
+    if exp_params['augment']:
+        print('augment validation data')
+        X_ = X_validation.copy()
+        X_validation_aug = np.concatenate((X_validation, np.rot90(X_, 2, (1, 2))))
+        X_validation_aug = np.concatenate(
+            (X_validation_aug, np.flip(X_validation_aug, axis=1), np.flip(X_validation_aug, axis=2)))
+        Y_ = Y_validation.copy()
+        Y_validation_aug = np.concatenate((Y_validation, np.rot90(Y_, 2, (1, 2))))
+        Y_validation_aug = np.concatenate(
+            (Y_validation_aug, np.flip(Y_validation_aug, axis=1), np.flip(Y_validation_aug, axis=2)))
+
 model = CARE(None, name= exp_params['model_name'], basedir= exp_params['base_dir'])
 print(conf)
 
