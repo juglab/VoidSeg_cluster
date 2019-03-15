@@ -101,6 +101,7 @@ def loss_noise2void(use_denoising=1):
 
         class_targets = tf.stack([bg, fg, b], axis=3)
         shape = tf.cast(tf.shape(y_true), tf.float32)
+
         # denoising_factor = tf.reduce_sum(class_targets) / (shape[0] * shape[1] * shape[2])
         # loss = denoising_factor * use_denoising * (tf.reduce_sum(K.square(target - denoised * mask)) / tf.reduce_sum(
         #     mask)) + tf.reduce_sum(
