@@ -39,10 +39,10 @@ for i in range(X.shape[0]):
     prediction_bg = prediction_seg[...,0]
     prediction_fg = prediction_seg[...,1]
     prediction_b = prediction_seg[...,2]
-    pred_thresholded = prediction_seg>0.5
+    pred_thresholded = prediction_fg>0.5
     labels, nb = ndimage.label(pred_thresholded)
 #    predictions.append(pred)
-    io.imsave(join(exp_params['base_dir'], 'mask'+str(i).zfill(3)+'.tif'), labels)
+    io.imsave(join(exp_params['base_dir'], 'mask'+str(i).zfill(3)+'.tif'), labels.astype(np.int16))
     io.imsave(join(exp_params['base_dir'], 'foreground'+str(i).zfill(3)+'.tif'), prediction_fg)
     io.imsave(join(exp_params['base_dir'], 'background'+str(i).zfill(3)+'.tif'), prediction_bg)
     io.imsave(join(exp_params['base_dir'], 'border'+str(i).zfill(3)+'.tif'), prediction_b)
