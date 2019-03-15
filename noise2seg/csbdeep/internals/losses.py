@@ -101,12 +101,26 @@ def loss_noise2void(use_denoising=1):
 
         class_targets = tf.stack([bg, fg, b], axis=3)
         shape = tf.cast(tf.shape(y_true), tf.float32)
-        denoising_factor = tf.reduce_sum(class_targets) / (shape[0] * shape[1] * shape[2])
+        # denoising_factor = tf.reduce_sum(class_targets) / (shape[0] * shape[1] * shape[2])
+        # loss = denoising_factor * use_denoising * (tf.reduce_sum(K.square(target - denoised * mask)) / tf.reduce_sum(
+        #     mask)) + tf.reduce_sum(
+        #     tf.reduce_sum(tf.reshape(class_targets, [-1, 3]), axis=-1)*cross_entropy(logits=tf.reshape(tf.stack([pred_bg, pred_fg, pred_b], axis=3), [-1, 3]),
+        #                   labels=tf.reshape(class_targets, [-1, 3]))) / (tf.reduce_sum(class_targets) + 1e-12)
 
-        loss = denoising_factor * use_denoising * (tf.reduce_sum(K.square(target - denoised * mask)) / tf.reduce_sum(
-            mask)) + tf.reduce_sum(
-            tf.reduce_sum(tf.reshape(class_targets, [-1, 3]), axis=-1)*cross_entropy(logits=tf.reshape(tf.stack([pred_bg, pred_fg, pred_b], axis=3), [-1, 3]),
-                          labels=tf.reshape(class_targets, [-1, 3]))) / tf.reduce_sum(class_targets)
+        # loss = use_denoising * (tf.reduce_sum(K.square(target - denoised * mask)) / tf.reduce_sum(
+        #     mask)) + tf.reduce_sum(
+        #     tf.reduce_sum(tf.reshape(class_targets, [-1, 3]), axis=-1) * cross_entropy(
+        #         logits=tf.reshape(tf.stack([pred_bg, pred_fg, pred_b], axis=3), [-1, 3]),
+        #         labels=tf.reshape(class_targets, [-1, 3]))) / (tf.reduce_sum(class_targets) + 1e-12)
+
+        onehot_labels = tf.reshape(class_targets, [-1, 3])
+        class_weights = tf.constant([[1.0, 1.0, 5.0]])
+        weights = tf.reduce_sum(class_weights * onehot_labels, axis=1)
+        loss = use_denoising * (tf.reduce_sum(K.square(target - denoised * mask)) / tf.reduce_sum(
+            mask)) + K.mean(
+            tf.reduce_sum(tf.reshape(class_targets, [-1, 3]), axis=-1) * (cross_entropy(
+                logits=tf.reshape(tf.stack([pred_bg, pred_fg, pred_b], axis=3), [-1, 3]),
+                labels=onehot_labels) * weights))
 
         return loss
 
