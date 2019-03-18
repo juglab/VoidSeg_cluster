@@ -1,6 +1,5 @@
 
-from os.path import isfile, join, basename
-from glob import glob
+from os.path import join
 import pickle
 
 from csbdeep.models import Config, CARE
@@ -10,16 +9,6 @@ import json
 from scipy import ndimage
 
 from numba import jit
-
-
-import argparse
-
-parser = argparse.ArgumentParser()
-parser.add_argument('-exp')
-
-args = parser.parse_args()
-
-exp_path = args.exp
 
 @jit
 def pixel_sharing_bipartite(lab1, lab2):
@@ -82,44 +71,42 @@ def denormalize(x, mean, std):
     return x*std + mean
 
 
-subdirs = {int(basename(x).split('_')[1]) : x for x in glob(join(exp_path, '*'))}
-subdirs_keys = [x for x in subdirs.keys()]
-subdirs_keys.sort()
+with open('experiment.json', 'r') as f:
+    exp_params = json.load(f)
 
-for sk in subdirs_keys:
-    with open(join(subdirs[sk], 'experiment.json'), 'r') as f:
-        exp_params = json.load(f)
-        train_files = np.load(exp_params['train_path'])
-        X_train = train_files['X_train']
-        mean, std = np.mean(X_train), np.std(X_train)
-        X_val = train_files['X_val']
-        Y_val = train_files['Y_val']
-        X_val = normalize(X_val, mean, std)
+train_files = np.load(join('..', '..', '..', *exp_params['train_path'].split('/')[4:]))
+X_train = train_files['X_train']
+mean, std = np.mean(X_train), np.std(X_train)
+X_val = train_files['X_val']
+Y_val = train_files['Y_val']
+X_val = normalize(X_val, mean, std)
+model = CARE(None, name=exp_params['model_name'], basedir='')
 
-        model = CARE(None, name=exp_params['model_name'], basedir=exp_params['base_dir'])
+print('Compute best threshold:')
+seg_scores = []
+for ts in np.linspace(0, 1, 21):
+    seg_score = 0
+    for idx in range(X_val.shape[0]):
+        img, gt = X_val[idx], Y_val[idx]
+        prediction = model.predict(img, axes='YX', normalizer=None)
+        prediction_exp = np.exp(prediction[..., 1:])
+        prediction_seg = prediction_exp / np.sum(prediction_exp, axis=2)[..., np.newaxis]
+        prediction_fg = prediction_seg[..., 1]
+        pred_thresholded = prediction_fg > ts
+        labels, _ = ndimage.label(pred_thresholded)
+        tmp_score = seg(gt, labels)
+        if not np.isnan(tmp_score):
+            seg_score += tmp_score
 
-        print('Compute best threshold for:')
-        print(subdirs[sk])
-        seg_scores = []
-        for ts in np.linspace(0, 1, 21):
-            seg_score = 0
-            for img, gt in zip(X_val, Y_val):
-                prediction = model.predict(img, axes='YX', normalizer=None)
-                prediction_exp = np.exp(prediction[..., 1:])
-                prediction_seg = prediction_exp / np.sum(prediction_exp, axis=2)[..., np.newaxis]
-                prediction_fg = prediction_seg[..., 1]
-                pred_thresholded = prediction_fg > ts
-                labels, _ = ndimage.label(pred_thresholded)
-                seg_score += seg(gt, labels)
+    seg_score /= float(X_val.shape[0])
+    seg_scores.append((ts, seg_score))
+    print('Seg-Score for threshold =', ts, 'is', seg_score)
 
-            seg_score /= float(X_val.shape[0])
-            seg_scores.append((ts, seg_score))
-            print('Seg-Score for threshold =', ts, 'is', seg_score)
+with open('seg_scores.dat', 'wb') as file_segScores:
+    pickle.dump(seg_scores, file_segScores)
 
-        with open(join(exp_params['base_dir'], 'seg_scores.dat'), 'wb') as file_segScores:
-            pickle.dump(seg_scores, file_segScores)
+best_score = sorted(seg_scores, key=lambda tup: tup[1])[-1]
 
-        best_score = sorted(seg_scores, key=lambda tup: tup[1])[0]
-        print('Best Seg-Score is', best_score[1], 'achieved with threshold =', best_score[0])
-        with open(join(exp_params['base_dir'], 'best_score.dat'), 'wb') as file_bestScore:
-            pickle.dump(best_score, file_bestScore)
+print('Best Seg-Score is', best_score[1], 'achieved with threshold =', best_score[0])
+with open('best_score.dat', 'wb') as file_bestScore:
+    pickle.dump(best_score, file_bestScore)
