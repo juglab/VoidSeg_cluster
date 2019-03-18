@@ -36,24 +36,43 @@ class ValExpName(Validator):
                 message='An experiment with this name already exists. Please choose another name.',
                 cursor_position=len(document.text)
             )
-
-
+            
+            
 class TrainFracValidator(Validator):
     def validate(self, document):
         values = document.text.split(',')
         for v in values:
             try:
-                int_v = int(v)
-                if int_v < 1 or int_v > 100:
+                int_v = float(v)
+                if int_v > 100:
                     raise ValidationError(
-                        message='Enter a comma separated list of integers between 1 and 100.',
+                        message='Enter a comma separated list of integers between 0 and 100.',
                         cursor_position=len(document.text)
                     )
             except ValueError:
                 raise ValidationError(
-                    message='Enter a list of integers between 1 and 100.',
+                    message='Enter a list of integers between 0 and 100.',
                     cursor_position=len(document.text)
                 )
+
+
+# class TrainFracValidator(Validator):
+#     def validate(self, document):
+#         values = document.text.split(',')
+#         for v in values:
+#             try:
+#                 int_v = int(v)
+#                 if int_v < 1 or int_v > 100:
+#                     raise ValidationError(
+#                         message='Enter a comma separated list of integers between 1 and 100.',
+#                         cursor_position=len(document.text)
+#                     )
+#             except ValueError:
+#                 raise ValidationError(
+#                     message='Enter a list of integers between 1 and 100.',
+#                     cursor_position=len(document.text)
+#                 )
+                
 
 
 def main():
@@ -115,7 +134,7 @@ def main():
                 'message': 'Training data fractions in x%:',
                 'default': '1,2,3,5,10,20,30,40,50,60,70,80,90,100',
                 'validate': TrainFracValidator,
-                'filter': lambda val: [int(x) for x in val.split(',')]
+                'filter': lambda val: [float(x) for x in val.split(',')]
             },
             {
                 'type': 'list',
