@@ -295,6 +295,7 @@ def main():
                 'exp_name' : config['exp_name'],
                 'train_path': config['train_path'],
                 'test_path': config['test_path'],
+                'is_seeding': config['is_seeding'],
                 'augment': config['augment'],
                 'train_frac': p,
                 'base_dir': join('../..', config['exp_name'], 'train_'+str(p)),
