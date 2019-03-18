@@ -66,7 +66,6 @@ with open(exp_params['model_name'] + '/config.json', 'r') as f:
     conf = json.load(f)
 
 use_denoising = conf['use_denoising']
-is_seeding = conf['is_seeding']
 
 # Read training images and GT
 train_files = np.load(exp_params['train_path'])
