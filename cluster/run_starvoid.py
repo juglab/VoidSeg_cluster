@@ -97,6 +97,19 @@ def main():
                 'default': True
             },
             {
+                'type': 'confirm',
+                'message': 'Use random seeding during training?',
+                'name': 'is_seeding',
+                'default': True
+            },
+            {
+                'type': 'input',
+                'name': 'seed',
+                'message': 'Random seed for training',
+                'default': '42',
+                'filter': lambda val: int(val)
+            },
+            {
                 'type': 'input',
                 'name': 'train_frac',
                 'message': 'Training data fractions in x%:',
