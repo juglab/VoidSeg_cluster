@@ -97,6 +97,19 @@ def main():
                 'default': True
             },
             {
+                'type': 'confirm',
+                'message': 'Use random seeding during training?',
+                'name': 'is_seeding',
+                'default': True
+            },
+            {
+                'type': 'input',
+                'name': 'seed',
+                'message': 'Random seed for training',
+                'default': '42',
+                'filter': lambda val: int(val)
+            },
+            {
                 'type': 'input',
                 'name': 'train_frac',
                 'message': 'Training data fractions in x%:',
@@ -282,6 +295,7 @@ def main():
                 'exp_name' : config['exp_name'],
                 'train_path': config['train_path'],
                 'test_path': config['test_path'],
+                'is_seeding': config['is_seeding'],
                 'augment': config['augment'],
                 'train_frac': p,
                 'base_dir': join('../..', config['exp_name'], 'train_'+str(p)),
