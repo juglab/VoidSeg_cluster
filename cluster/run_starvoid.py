@@ -104,7 +104,7 @@ def main():
             },
             {
                 'type': 'input',
-                'name': 'seed',
+                'name': 'random_seed',
                 'message': 'Random seed for training',
                 'default': '42',
                 'filter': lambda val: int(val)
@@ -296,6 +296,7 @@ def main():
                 'train_path': config['train_path'],
                 'test_path': config['test_path'],
                 'is_seeding': config['is_seeding'],
+                'random_seed': config['random_seed'],
                 'augment': config['augment'],
                 'train_frac': p,
                 'base_dir': join('../..', config['exp_name'], 'train_'+str(p)),

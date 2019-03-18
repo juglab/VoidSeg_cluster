@@ -95,7 +95,7 @@ train_frac = int(np.round((exp_params['train_frac'] / 100) * X_train.shape[0]))
 if 'is_seeding' in exp_params.keys():
     if exp_params['is_seeding']:
         print('seeding training data')
-        np.random.seed(exp_params['seed'])
+        np.random.seed(exp_params['random_seed'])
         seed_ind = np.random.permutation(X_train.shape[0])
         X_train = X_train[seed_ind]
         Y_train = Y_train[seed_ind]
