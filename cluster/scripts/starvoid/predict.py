@@ -6,6 +6,8 @@ from scipy import ndimage
 from os.path import join
 from skimage import io
 
+import pickle
+
 import json
 
 def normalize(img, mean, std):
@@ -30,6 +32,11 @@ X = normalize(X_test, mean, std)
 
 model = CARE(None, name= exp_params['model_name'], basedir= exp_params['base_dir'])
 
+with open('best_score.dat', 'rb') as best_score_file:
+    ts = pickle.load(best_score_file)[0]
+
+print('Use threshold =', ts)
+
 for i in range(X.shape[0]):
     prediction = model.predict(X[i], axes='YX',normalizer=None )
     denoised = prediction[...,0]
@@ -39,7 +46,7 @@ for i in range(X.shape[0]):
     prediction_bg = prediction_seg[...,0]
     prediction_fg = prediction_seg[...,1]
     prediction_b = prediction_seg[...,2]
-    pred_thresholded = prediction_fg>0.5
+    pred_thresholded = prediction_fg>ts
     labels, nb = ndimage.label(pred_thresholded)
 #    predictions.append(pred)
     io.imsave(join(exp_params['base_dir'], 'mask'+str(i).zfill(3)+'.tif'), labels.astype(np.int16))
