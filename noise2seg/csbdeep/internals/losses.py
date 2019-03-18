@@ -115,9 +115,8 @@ def loss_noise2void(use_denoising=1):
         #         labels=tf.reshape(class_targets, [-1, 3]))) / (tf.reduce_sum(class_targets) + 1e-12)
 
         onehot_labels = tf.reshape(class_targets, [-1, 3])
-        # class_weights = tf.constant([[1.0, 1.0, 5.0]])
-        # weights = tf.reduce_sum(class_weights * onehot_labels, axis=1)
-        weights = tf.reduce_sum(onehot_labels, axis=1)
+        class_weights = tf.constant([[1.0, 1.0, 5.0]])
+        weights = tf.reduce_sum(class_weights * onehot_labels, axis=1)
         loss = use_denoising * (tf.reduce_sum(K.square(target - denoised * mask)) / tf.reduce_sum(
             mask)) + K.mean(
             tf.reduce_sum(tf.reshape(class_targets, [-1, 3]), axis=-1) * (cross_entropy(
