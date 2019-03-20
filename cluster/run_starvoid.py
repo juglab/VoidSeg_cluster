@@ -43,15 +43,15 @@ class TrainFracValidator(Validator):
         values = document.text.split(',')
         for v in values:
             try:
-                int_v = float(v)
-                if 0 <= int_v or int_v > 100:
+                float_v = float(v)
+                if float_v < 0 or float_v > 100:
                     raise ValidationError(
-                        message='Enter a comma separated list of integers between 0 and 100.',
+                        message='Enter a comma separated list of floats between 0 and 100.',
                         cursor_position=len(document.text)
                     )
             except ValueError:
                 raise ValidationError(
-                    message='Enter a list of integers between 0 and 100.',
+                    message='Enter a list of floats between 0 and 100.',
                     cursor_position=len(document.text)
                 )
                 
