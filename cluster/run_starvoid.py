@@ -44,7 +44,7 @@ class TrainFracValidator(Validator):
         for v in values:
             try:
                 int_v = float(v)
-                if int_v > 100:
+                if 0 <= int_v or int_v > 100:
                     raise ValidationError(
                         message='Enter a comma separated list of integers between 0 and 100.',
                         cursor_position=len(document.text)
@@ -54,26 +54,7 @@ class TrainFracValidator(Validator):
                     message='Enter a list of integers between 0 and 100.',
                     cursor_position=len(document.text)
                 )
-
-
-# class TrainFracValidator(Validator):
-#     def validate(self, document):
-#         values = document.text.split(',')
-#         for v in values:
-#             try:
-#                 int_v = int(v)
-#                 if int_v < 1 or int_v > 100:
-#                     raise ValidationError(
-#                         message='Enter a comma separated list of integers between 1 and 100.',
-#                         cursor_position=len(document.text)
-#                     )
-#             except ValueError:
-#                 raise ValidationError(
-#                     message='Enter a list of integers between 1 and 100.',
-#                     cursor_position=len(document.text)
-#                 )
                 
-
 
 def main():
     parser = ap.ArgumentParser(description="Noise2Void cluster job setup script.")
