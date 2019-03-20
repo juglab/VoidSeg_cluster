@@ -90,6 +90,7 @@ Y_train = np.concatenate(
     (X_train[..., np.newaxis], np.zeros(X_train.shape, dtype=np.float32)[..., np.newaxis], Y_train_oneHot), axis=3)
 
 # Select fraction
+print('X_train.shape:', X_train.shape[0])
 train_frac = int(np.round((exp_params['train_frac'] / 100) * X_train.shape[0]))
 
 if 'is_seeding' in exp_params.keys():
@@ -105,6 +106,8 @@ if use_denoising:
 else:
     X_train = X_train[:train_frac]
     Y_train = Y_train[:train_frac]
+
+print('X_train.shape:', X_train.shape[0])
 
 
 if 'augment' in exp_params.keys():
