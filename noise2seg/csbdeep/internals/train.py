@@ -186,8 +186,10 @@ class Noise2VoidDataWrapper(Sequence):
                 y, x = next(coord_gen)
                 y = int(i * box_size + y)
                 x = int(j * box_size + x)
-                if (y < shape[0] and x < shape[1]):
-                    coords.append((y, x))
+                if (y < (shape[0]-2) and x < (shape[1]-2)):
+                    for x_ in range(x-2, x+2):
+                        for y_ in range(y-2, y+2):
+                            coords.append((y_, x_))
         return coords
 
     @staticmethod
