@@ -113,7 +113,7 @@ def main():
                 'type': 'input',
                 'name': 'train_frac',
                 'message': 'Training data fractions in x%:',
-                'default': '1,2,3,5,10,20,30,40,50,60,70,80,90,100',
+                'default': '0.25,0.5,1.0,2.0,4.0,8.0,16.0,32.0,64.0,100.0',
                 'validate': TrainFracValidator,
                 'filter': lambda val: [float(x) for x in val.split(',')]
             },
@@ -188,7 +188,7 @@ def main():
                 'type': 'input',
                 'name': 'train_epochs',
                 'message': 'train_epochs',
-                'default': '200',
+                'default': '100',
                 'validate': lambda val: int(val) > 0,
                 'filter': lambda val: int(val)
             },
@@ -290,25 +290,48 @@ def main():
         config['unet_residual'] = False
         pwd = os.getcwd()
         for p in config['train_frac']:
-            os.chdir(pwd)
-            exp_conf = {
-                'exp_name' : config['exp_name'],
-                'train_path': config['train_path'],
-                'test_path': config['test_path'],
-                'is_seeding': config['is_seeding'],
-                'random_seed': config['random_seed'],
-                'augment': config['augment'],
-                'train_frac': p,
-                'base_dir': join('../..', config['exp_name'], 'train_'+str(p)),
-                'model_name': config['exp_name'].split('_')[0] + '_model'
-            }
+            if config['is_seeding']:
+                for run_idx in [1,2,3,4,5,6,7,8]:
+                    os.chdir(pwd)
+                    run_name = config['exp_name']+'_run'+str(run_idx)
+                    exp_conf = {
+                        'exp_name' : run_name,
+                        'train_path': config['train_path'],
+                        'test_path': config['test_path'],
+                        'is_seeding': config['is_seeding'],
+                        'random_seed': run_idx,
+                        'augment': config['augment'],
+                        'train_frac': p,
+                        'base_dir': join('../..', run_name, 'train_'+str(p)),
+                        'model_name': config['exp_name'].split('_')[0] + '_model'
+                    }
 
-            net_conf = {}
-            for k in config.keys():
-                if k not in exp_conf.keys():
-                    net_conf[k] = config[k]
+                    net_conf = {}
+                    for k in config.keys():
+                        if k not in exp_conf.keys():
+                            net_conf[k] = config[k]
 
-            start_experiment(exp_conf, net_conf, 'train_'+str(p))
+                    start_experiment(exp_conf, net_conf, 'train_'+str(p))
+            else:
+                os.chdir(pwd)
+                exp_conf = {
+                    'exp_name': config['exp_name'],
+                    'train_path': config['train_path'],
+                    'test_path': config['test_path'],
+                    'is_seeding': config['is_seeding'],
+                    'random_seed': config['random_seed'],
+                    'augment': config['augment'],
+                    'train_frac': p,
+                    'base_dir': join('../..', config['exp_name'], 'train_' + str(p)),
+                    'model_name': config['exp_name'].split('_')[0] + '_model'
+                }
+
+                net_conf = {}
+                for k in config.keys():
+                    if k not in exp_conf.keys():
+                        net_conf[k] = config[k]
+
+                start_experiment(exp_conf, net_conf, 'train_' + str(p))
 
 
 def start_experiment(exp_conf, net_conf, run_dir):
