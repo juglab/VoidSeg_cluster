@@ -193,7 +193,7 @@ class CARE_SEQ(CARE):
 
 model = CARE_SEQ(None, name= exp_params['model_name'], basedir= exp_params['base_dir'])
 print(conf)
-model.keras.summary()
+model.keras_model.summary()
 
 hist = model.train(X_train[..., np.newaxis],Y_train,validation_data=(X_validation,Y_validation))
 
