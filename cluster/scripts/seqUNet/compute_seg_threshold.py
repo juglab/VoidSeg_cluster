@@ -71,6 +71,42 @@ def denormalize(x, mean, std):
     return x*std + mean
 
 
+class CARE_SEQ(CARE):
+    def _build(self):
+        def seq_unet(input_shape, last_activation, n_depth=2, n_filter_base=32, kernel_size=(3,3),
+             n_conv_per_depth=2, activation="relu", batch_norm=True, pool_size=(2,2),
+             n_channel_out=4, eps_scale=1e-3):
+            if last_activation is None:
+                raise ValueError("last activation has to be given (e.g. 'sigmoid', 'relu')!")
+
+            all((s % 2 == 1 for s in kernel_size)) or _raise(ValueError('kernel size should be odd in all dimensions.'))
+
+            channel_axis = -1 if backend_channels_last() else 1
+
+            n_dim = len(kernel_size)
+            conv = Conv2D if n_dim==2 else Conv3D
+
+            input = Input(input_shape, name = "input")
+            unet = unet_block(2, 32, (3,3),
+                              activation="relu", dropout=False, batch_norm=True,
+                              n_conv_per_depth=2, pool=(2,2), prefix='n2v')(input)
+
+            final_n2v = conv(1, (1,)*n_dim, activation='linear')(unet)
+
+            unet_seg = unet_block(2, 32, (3,3),
+                              activation="relu", dropout=False, batch_norm=True,
+                              n_conv_per_depth=2, pool=(2,2), prefix='seg')(unet)
+
+            final_seg = conv(3, (1,)*n_dim, activation='linear')(unet_seg)
+
+            final_n2v = Activation(activation=last_activation)(final_n2v)
+            final_seg = Activation(activation=last_activation)(final_seg)
+
+            final = Concatenate(axis=channel_axis)([final_n2v, final_seg])
+            return Model(inputs=input, outputs=final)
+        return seq_unet((None, None, 1), 'linear')
+
+
 with open('experiment.json', 'r') as f:
     exp_params = json.load(f)
 
@@ -80,7 +116,7 @@ mean, std = np.mean(X_train), np.std(X_train)
 X_val = train_files['X_val']
 Y_val = train_files['Y_val']
 X_val = normalize(X_val, mean, std)
-model = CARE(None, name=exp_params['model_name'], basedir='')
+model = CARE_SEQ(None, name=exp_params['model_name'], basedir='')
 
 print('Compute best threshold:')
 seg_scores = []
