@@ -31,11 +31,11 @@ class ValExpName(Validator):
         names = glob.glob('/projects/juglab/StarVoid/outdata/*')
         names = [n.split('/')[-1] for n in names]
 
-        # if document.text in names:
-        #     raise ValidationError(
-        #         message='An experiment with this name already exists. Please choose another name.',
-        #         cursor_position=len(document.text)
-        #     )
+        if document.text in names:
+            raise ValidationError(
+                message='An experiment with this name already exists. Please choose another name.',
+                cursor_position=len(document.text)
+            )
             
             
 class TrainFracValidator(Validator):
@@ -349,18 +349,18 @@ def start_experiment(exp_conf, net_conf, run_dir):
         else:
             print('Abort')
     else:
-        # os.makedirs(join('../..', 'outdata', exp_conf['exp_name'],run_dir, exp_conf['model_name']), mode=0o775)
-        #
-        # with open(join('../..', 'outdata', exp_conf['exp_name'],run_dir, 'experiment.json'), 'w') as file:
-        #     json.dump(exp_conf, file)
-        #
-        # with open(join('../..', 'outdata', exp_conf['exp_name'],run_dir, exp_conf['model_name'],  'config.json'), 'w') as file:
-        #     json.dump(net_conf, file)
-        #
-        # os.makedirs(join('../..', 'outdata', exp_conf['exp_name'], run_dir,'scripts', 'seqUNet'), mode=0o775)
-        # os.makedirs(join('../..', 'outdata', exp_conf['exp_name'], run_dir,'scripts', 'utils'), mode=0o775)
-        #
-        # os.system('chmod -R 775 '+'../../outdata/'+exp_conf['exp_name'])
+        os.makedirs(join('../..', 'outdata', exp_conf['exp_name'],run_dir, exp_conf['model_name']), mode=0o775)
+
+        with open(join('../..', 'outdata', exp_conf['exp_name'],run_dir, 'experiment.json'), 'w') as file:
+            json.dump(exp_conf, file)
+
+        with open(join('../..', 'outdata', exp_conf['exp_name'],run_dir, exp_conf['model_name'],  'config.json'), 'w') as file:
+            json.dump(net_conf, file)
+
+        os.makedirs(join('../..', 'outdata', exp_conf['exp_name'], run_dir,'scripts', 'seqUNet'), mode=0o775)
+        os.makedirs(join('../..', 'outdata', exp_conf['exp_name'], run_dir,'scripts', 'utils'), mode=0o775)
+
+        os.system('chmod -R 775 '+'../../outdata/'+exp_conf['exp_name'])
 
         run(exp_conf, net_conf, run_dir)
 
