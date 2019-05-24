@@ -127,7 +127,7 @@ if 'augment' in exp_params.keys():
         Y_validation_aug = np.concatenate(
             (Y_validation_aug, np.flip(Y_validation_aug, axis=1), np.flip(Y_validation_aug, axis=2)))
 
-model = CARE(None, name= 'n2vpart_finetune', basedir= exp_params['base_dir'])
+model = CARE(None, name= 'n2vpart_VoidSeg', basedir='/lustre/projects/juglab/StarVoid')
 model.load_weights('/lustre/projects/juglab/StarVoid/n2vpart_VoidSeg/weights_best.h5') ## Set path to n2v pretrained model
 
 #####Scheme 1 (Retraining all weights with n2v initialization)
