@@ -287,7 +287,7 @@ def main():
                 'type': 'list',
                 'name': 'n2v_manipulator',
                 'message': 'n2v_manipulator',
-                'choices': ['uniform_withCP', 'normal_withoutCP', 'normal_additive', 'normal_fitted', 'identity']
+                'choices': ['identity', 'uniform_withCP', 'normal_withoutCP', 'normal_additive', 'normal_fitted']
             },
             {
                 'type': 'input',
@@ -299,7 +299,7 @@ def main():
                 'type': 'confirm',
                 'message': 'use_denoising',
                 'name': 'use_denoising',
-                'default': True,
+                'default': False,
                 'filter': lambda val: int(val)
             }
         ]
