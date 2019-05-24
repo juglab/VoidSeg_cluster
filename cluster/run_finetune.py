@@ -351,9 +351,9 @@ def start_experiment(exp_conf, net_conf, run_dir):
         os.makedirs(join('../..', 'outdata', exp_conf['exp_name'],run_dir, 'segpart_finetune_scheme1'), mode=0o775)
         os.makedirs(join('../..', 'outdata', exp_conf['exp_name'],run_dir, 'segpart_finetune_scheme2'), mode=0o775)
         os.makedirs(join('../..', 'outdata', exp_conf['exp_name'],run_dir, 'segpart_finetune_scheme3'), mode=0o775)
-        cp('/lustre/projects/juglab/StarVoid/n2vpart_finetune/config.json',join('../..', 'outdata', exp_conf['exp_name'],run_dir, 'segpart_finetune_scheme1', 'config.json'))
-        cp('/lustre/projects/juglab/StarVoid/n2vpart_finetune/config.json',join('../..', 'outdata', exp_conf['exp_name'],run_dir, 'segpart_finetune_scheme2', 'config.json'))
-        cp('/lustre/projects/juglab/StarVoid/n2vpart_finetune/config.json',join('../..', 'outdata', exp_conf['exp_name'],run_dir, 'segpart_finetune_scheme3', 'config.json'))
+        cp('/lustre/projects/juglab/StarVoid/n2vpart_VoidSeg/config.json',join('../..', 'outdata', exp_conf['exp_name'],run_dir, 'segpart_finetune_scheme1', 'config.json'))
+        cp('/lustre/projects/juglab/StarVoid/n2vpart_VoidSeg/config.json',join('../..', 'outdata', exp_conf['exp_name'],run_dir, 'segpart_finetune_scheme2', 'config.json'))
+        cp('/lustre/projects/juglab/StarVoid/n2vpart_VoidSeg/config.json',join('../..', 'outdata', exp_conf['exp_name'],run_dir, 'segpart_finetune_scheme3', 'config.json'))
 
         with open(join('../..', 'outdata', exp_conf['exp_name'],run_dir, 'experiment.json'), 'w') as file:
             json.dump(exp_conf, file)
