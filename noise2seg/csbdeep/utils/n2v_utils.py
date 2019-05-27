@@ -59,8 +59,11 @@ def pm_normal_fitted(local_sub_patch_radius):
     return local_gaussian
 
 
-def pm_identity(patch, coord):
-    return patch[tuple(coord)]
+def pm_identity(patch):
+    def test_identity(patch, coord):
+        return  patch[tuple(coord)]
+    return test_identity
+
 
 
 def manipulate_val_data(X_val, Y_val, num_pix=64, shape=(64, 64), value_manipulation=pm_uniform_withCP(5)):
