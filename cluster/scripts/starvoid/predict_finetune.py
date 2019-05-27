@@ -30,31 +30,28 @@ X_trn = train_files['X_train']
 mean, std = np.mean(X_trn), np.std(X_trn)
 X = normalize(X_test, mean, std)
 
-model_name= 'segpart_finetune_scheme'
+model = CARE(None, name= exp_params['model_name'], basedir= exp_params['base_dir'])
+with open('best_score.dat', 'rb') as best_score_file:
+    ts = pickle.load(best_score_file)[0]
 
-for num in range(1,4):
-    model = CARE(None, name= model_name+str(num), basedir= exp_params['base_dir'])
-    with open('best_score.dat', 'rb') as best_score_file:
-        ts = pickle.load(best_score_file)[0]
+print('Use threshold =', ts)
 
-    print('Use threshold =', ts)
-
-    for i in range(X.shape[0]):
-        prediction = model.predict(X[i], axes='YX',normalizer=None )
-        denoised = prediction[...,0]
-        prediction_exp = np.exp(prediction[...,1:])
-        prediction_seg = prediction_exp/np.sum(prediction_exp, axis = 2)[...,np.newaxis]
-        predicton_denoise = denormalize(denoised, mean, std)
-        prediction_bg = prediction_seg[...,0]
-        prediction_fg = prediction_seg[...,1]
-        prediction_b = prediction_seg[...,2]
-        pred_thresholded = prediction_fg>ts
-        labels, nb = ndimage.label(pred_thresholded)
+for i in range(X.shape[0]):
+    prediction = model.predict(X[i], axes='YX',normalizer=None )
+    denoised = prediction[...,0]
+    prediction_exp = np.exp(prediction[...,1:])
+    prediction_seg = prediction_exp/np.sum(prediction_exp, axis = 2)[...,np.newaxis]
+    predicton_denoise = denormalize(denoised, mean, std)
+    prediction_bg = prediction_seg[...,0]
+    prediction_fg = prediction_seg[...,1]
+    prediction_b = prediction_seg[...,2]
+    pred_thresholded = prediction_fg>ts
+    labels, nb = ndimage.label(pred_thresholded)
     #    predictions.append(pred)
-        io.imsave(join(exp_params['base_dir'], 'mask'+str(i).zfill(3)+'.tif'), labels.astype(np.int16))
-        io.imsave(join(exp_params['base_dir'], 'foreground'+str(i).zfill(3)+'.tif'), prediction_fg)
-        io.imsave(join(exp_params['base_dir'], 'background'+str(i).zfill(3)+'.tif'), prediction_bg)
-        io.imsave(join(exp_params['base_dir'], 'border'+str(i).zfill(3)+'.tif'), prediction_b)
+    io.imsave(join(exp_params['base_dir'], 'mask'+str(i).zfill(3)+'.tif'), labels.astype(np.int16))
+    io.imsave(join(exp_params['base_dir'], 'foreground'+str(i).zfill(3)+'.tif'), prediction_fg)
+    io.imsave(join(exp_params['base_dir'], 'background'+str(i).zfill(3)+'.tif'), prediction_bg)
+    io.imsave(join(exp_params['base_dir'], 'border'+str(i).zfill(3)+'.tif'), prediction_b)
     
 
 

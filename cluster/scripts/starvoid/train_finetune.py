@@ -48,10 +48,13 @@ with open(exp_params['model_name'] + '/config.json', 'r') as f:
     conf = json.load(f)
 
 use_denoising = conf['use_denoising']
-
+print("Use denoising:",use_denoising)
 
 num_pix = 1
 pixelsInPatch = conf['n2v_patch_shape'][0] * conf['n2v_patch_shape'][1]
+
+scheme = exp_params['scheme']
+
     
     
 ################This is where the fine tuning stuff begins ################################################################
@@ -131,40 +134,46 @@ model = CARE(None, name= 'n2vpart_VoidSeg', basedir='/lustre/projects/juglab/Sta
 model.load_weights('/lustre/projects/juglab/StarVoid/n2vpart_VoidSeg/weights_best.h5') ## Set path to n2v pretrained model
 
 #####Scheme 1 (Retraining all weights with n2v initialization)
-model_1 = CARE(None, name= 'segpart_finetune_scheme1', basedir= exp_params['base_dir'])
 
-i = 0;
-for i in range(len(model_1.keras_model.layers[:-2])):
-    model_1.keras_model.layers[i].set_weights(model.keras_model.layers[i].get_weights())
-    i = i+1
-hist1 = model_1.train(X_train_aug[..., np.newaxis],Y_train_aug,validation_data=(X_validation_aug,Y_validation_aug))
+if(scheme == 'scheme1'):
+    model_1 = CARE(None, name= exp_params['model_name'], basedir= exp_params['base_dir'])
+
+    i = 0;
+    for i in range(len(model_1.keras_model.layers[:-2])):
+        model_1.keras_model.layers[i].set_weights(model.keras_model.layers[i].get_weights())
+        i = i+1
+    hist1 = model_1.train(X_train_aug[..., np.newaxis],Y_train_aug,validation_data=(X_validation_aug,Y_validation_aug))
 
 #####Scheme 2 (Freezing only downsampling weights)
 
-model_2 = CARE(None, name= 'segpart_finetune_scheme2', basedir= exp_params['base_dir'])
-j = 0;
-for j in range(len(model_2.keras_model.layers[:-2])):
-    model_2.keras_model.layers[j].set_weights(model.keras_model.layers[j].get_weights())
-    j = j+1
+if(scheme == 'scheme2'):
 
-for layer in model_2.keras_model.layers[:15]:
-    layer.trainable = False
+    model_2 = CARE(None, name= exp_params['model_name'], basedir= exp_params['base_dir'])
+    j = 0;
+    for j in range(len(model_2.keras_model.layers[:-2])):
+        model_2.keras_model.layers[j].set_weights(model.keras_model.layers[j].get_weights())
+        j = j+1
 
-for layer in model_2.keras_model.layers:
-    print(layer, layer.trainable)
-hist2 = model_2.train(X_train_aug[..., np.newaxis],Y_train_aug,validation_data=(X_validation_aug,Y_validation_aug))   
+    for layer in model_2.keras_model.layers[:15]:
+        layer.trainable = False
+
+    for layer in model_2.keras_model.layers:
+        print(layer, layer.trainable)
+    hist2 = model_2.train(X_train_aug[..., np.newaxis],Y_train_aug,validation_data=(X_validation_aug,Y_validation_aug))   
 
 #####Scheme 3 (Freezing all weights except last layer)
 
-model_3 = CARE(None, name= 'segpart_finetune_scheme3', basedir= exp_params['base_dir'])
-k = 0;
-for j in range(len(model_3.keras_model.layers[:-2])):
-    model_3.keras_model.layers[k].set_weights(model.keras_model.layers[k].get_weights())
-    k = k+1
+if(scheme == 'scheme3'):
 
-for layer in model_3.keras_model.layers[:-2]:
-    layer.trainable = False
+    model_3 = CARE(None, name= exp_params['model_name'], basedir= exp_params['base_dir'])
+    k = 0;
+    for j in range(len(model_3.keras_model.layers[:-2])):
+        model_3.keras_model.layers[k].set_weights(model.keras_model.layers[k].get_weights())
+        k = k+1
 
-for layer in model_3.keras_model.layers:
-    print(layer, layer.trainable)
-hist3 = model_3.train(X_train_aug[..., np.newaxis],Y_train_aug,validation_data=(X_validation_aug,Y_validation_aug))  
+    for layer in model_3.keras_model.layers[:-2]:
+        layer.trainable = False
+
+    for layer in model_3.keras_model.layers:
+        print(layer, layer.trainable)
+    hist3 = model_3.train(X_train_aug[..., np.newaxis],Y_train_aug,validation_data=(X_validation_aug,Y_validation_aug))  
