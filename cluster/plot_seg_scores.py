@@ -35,7 +35,8 @@ gt_images_keys.sort()
 
 exp_list = []
 for exp in exp_paths:
-    subdirs = {int(basename(x).split('_')[1]) : x for x in glob(join(exp, '*'))}
+    print(exp)
+    subdirs = {int(float(basename(x).split('_')[1])) : x for x in glob(join(exp, '*'))}
     subdirs_keys = [x for x in subdirs.keys()]
     subdirs_keys.sort()
     list_SEGs = []
@@ -64,7 +65,7 @@ plt.figure(figsize=(10,5))
 for exp, path in zip(exp_list, exp_paths):
     plt.plot(X_train_frac, exp, label=basename(path))
 
-plt.ylim(0.55, 0.8)
+#plt.ylim(0.55, 0.8)
 plt.xlabel('Training Data Fraction')
 plt.ylabel('SEG Score')
 plt.legend(loc='lower right')
