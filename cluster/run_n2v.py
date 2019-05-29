@@ -132,17 +132,10 @@ def main():
                 'filter': lambda val: int(val)
             },
             {
-                'type': 'list',
-                'name': 'unet_residual',
-                'message': 'unet_residual',
-                'choices': ['True', 'False'],
-                'filter': lambda val: val == 'True'
-            },
-            {
                 'type': 'input',
                 'name': 'unet_n_depth',
                 'message': 'unet_n_depth',
-                'default': '3',
+                'default': '2',
                 'filter': lambda val: int(val)
             },
             {
@@ -247,7 +240,7 @@ def main():
                 'type': 'input',
                 'name': 'n2v_num_pix',
                 'message': 'n2v_num_pix',
-                'default': '256',
+                'default': '64',
                 'validate': lambda val: int(val) > 0,
                 'filter': lambda val: int(val)
             },
@@ -255,7 +248,7 @@ def main():
                 'type': 'input',
                 'name': 'n2v_patch_shape',
                 'message': 'n2v_patch_shape',
-                'default': '128, 128',
+                'default': '64, 64',
                 'filter': lambda val: tuple([int(x) for x in val.split(', ')])
             },
             {
@@ -274,6 +267,7 @@ def main():
 
         config = prompt(questions)
         config['probabilistic'] = False
+        config['unet_residual'] = False
         pwd = os.getcwd()
         for p in config['train_frac']:
             os.chdir(pwd)
