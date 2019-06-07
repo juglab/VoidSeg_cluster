@@ -22,7 +22,7 @@ class PredictSeg:
     def denormalize(self, x, mean, std):
         return x*std + mean
 
-    def predict(X_test, X_trn, model_id):
+    def predict(self,X_test, X_trn, model_id):
         mean, std = np.mean(X_trn), np.std(X_trn)
         X = self.normalize(X_test, mean, std)
         model = CARE(None, name= self.exp_params['model_name']+str(model_id), basedir= self.exp_params['base_dir']) 

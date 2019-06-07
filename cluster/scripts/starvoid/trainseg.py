@@ -45,7 +45,7 @@ class TrainSeg:
     def convert_to_oneHot(self, data):
         data_oneHot = np.zeros((*data.shape, 3), dtype=np.float32)
         for i in range(data.shape[0]):
-            data_oneHot[i] = onehot_encoding(add_boundary_label(data[i].astype(np.int32)))
+            data_oneHot[i] = self.onehot_encoding(self.add_boundary_label(data[i].astype(np.int32)))
         return data_oneHot
         
     def prepare_data_and_segment(self, X_train, Y_train, X_val, Y_val):
@@ -72,6 +72,7 @@ class TrainSeg:
                 seed_ind = np.random.permutation(X_train.shape[0])
                 X_train = X_train[seed_ind]
                 Y_train = Y_train[seed_ind]
+                
         return X_train, Y_train
         
     def fractionate_train_data(self, X_train, Y_train):
@@ -83,8 +84,8 @@ class TrainSeg:
             
     def augment_train_data(self, X_train, Y_train):
     
-        if 'augment' in exp_params.keys():
-            if exp_params['augment']:
+        if 'augment' in self.exp_params.keys():
+            if self.exp_params['augment']:
                 print('augmenting training data')
                 X_ = X_train.copy()
                 X_train_aug = np.concatenate((X_train, np.rot90(X_, 2, (1, 2))))
@@ -92,8 +93,8 @@ class TrainSeg:
                 Y_ = Y_train.copy()
                 Y_train_aug = np.concatenate((Y_train, np.rot90(Y_, 2, (1, 2))))
                 Y_train_aug = np.concatenate((Y_train_aug, np.flip(Y_train_aug, axis=1), np.flip(Y_train_aug, axis=2)))
-                print('Training data size after augmentation', X_train.shape)
-                print('Training data size after augmentation', Y_train.shape)
+                print('Training data size after augmentation', X_train_aug.shape)
+                print('Training data size after augmentation', Y_train_aug.shape)
         
         return X_train_aug, Y_train_aug
             
@@ -113,8 +114,8 @@ class TrainSeg:
     def augment_val_data(self, X_validation, Y_validation):
     
         # Augment validation
-        if 'augment' in exp_params.keys():
-            if exp_params['augment']:
+        if 'augment' in self.exp_params.keys():
+            if self.exp_params['augment']:
                 print('augment validation data')
                 X_ = X_validation.copy()
                 X_validation_aug = np.concatenate((X_validation, np.rot90(X_, 2, (1, 2))))
@@ -126,21 +127,19 @@ class TrainSeg:
                     (Y_validation_aug, np.flip(Y_validation_aug, axis=1), np.flip(Y_validation_aug, axis=2)))
                     
         return X_validation_aug, Y_validation_aug
-        
-    def load_weight_from_model(m):
-        
+                
         
     def build_model(self, X_train_aug, Y_train_aug, X_validation_aug, Y_validation_aug):
                 
-        model = CARE(None, name= exp_params['model_name']+str('_seg_model'), basedir= exp_params['base_dir'])
+        model = CARE(None, name= self.exp_params['model_name']+str('_seg_model'), basedir= self.exp_params['base_dir'])
         print(self.seg_conf)
         
         if(self.load_weights):
-            model.load_weights(join(exp_params['base_dir'], exp_params['model_name']+str('_n2v_init_model'), str(weights_best.h5))  #It will always be model_n2v_init_model for initialization
+            model.load_weights('../' +self.exp_params['model_name']+str('_n2v_init_model')+'/weights_best.h5')  #It will always be model_n2v_init_model for initialization
 
         hist = model.train(X_train_aug[..., np.newaxis],Y_train_aug,validation_data=(X_validation_aug,Y_validation_aug))
 
-        with open(join(exp_params['base_dir'], exp_params['model_name']+str('_seg_model'), 'history_' + exp_params['model_name'] + str('_seg_model')+'.dat'),
+        with open(join(self.exp_params['base_dir'], self.exp_params['model_name']+str('_seg_model'), 'history_' + self.exp_params['model_name'] + str('_seg_model')+'.dat'),
                   'wb') as file_pi:
               pickle.dump(hist.history, file_pi)
     

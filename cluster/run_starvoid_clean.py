@@ -427,7 +427,7 @@ def start_experiment(exp_conf, net_conf, run_dir):
             
             net_conf_seg_model["n2v_manipulator"] = 'identity'
             
-            os.makedirs(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, exp_conf['model_name']+str('_n2v_init_model')), mode=0o775)
+            os.makedirs(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, exp_conf['model_name']+str('_denoise_model')), mode=0o775)
             os.makedirs(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, exp_conf['model_name']+str('_seg_model')), mode=0o775)
        
             with open(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, 'experiment.json'), 'w') as file:
