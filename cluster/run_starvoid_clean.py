@@ -306,7 +306,7 @@ def main():
                 'type': 'list',
                 'name': 'scheme',
                 'message': 'scheme',
-                'choices': ['baseline', 'sequential', 'finetune', 'finetune_denoised']
+                'choices': ['baseline', 'sequential', 'finetune', 'finetune_denoised', 'finetune_denoised_noisy']
             }
         ]
 
@@ -353,6 +353,35 @@ def start_experiment(exp_conf, net_conf, run_dir):
         else:
             print('Abort')
     else:
+        
+        if(exp_conf['scheme'] == 'finetune_denoised_noisy'):
+    
+            net_conf_n2v_init_model = dict(net_conf)
+            net_conf_seg_model = dict(net_conf)
+            
+            net_conf_n2v_init_model["use_denoising"] = 1
+            net_conf_seg_model["use_denoising"] = 0
+            
+            net_conf_seg_model["n2v_manipulator"] = 'identity'
+            
+            os.makedirs(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, exp_conf['model_name']+str('_n2v_init_model')), mode=0o775)
+            os.makedirs(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, exp_conf['model_name']+str('_seg_model')), mode=0o775)
+       
+            with open(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, 'experiment.json'), 'w') as file:
+                json.dump(exp_conf, file)
+            
+            with open(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, exp_conf['model_name']+str('_n2v_init_model'),  'config.json'), 'w') as file:
+                json.dump(net_conf_n2v_init_model, file)
+            
+            with open(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, exp_conf['model_name']+str('_seg_model'),  'config.json'), 'w') as file:
+                json.dump(net_conf_seg_model, file)
+
+            os.makedirs(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'], run_dir,'scripts', 'starvoid'), mode=0o775)
+            os.makedirs(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'], run_dir,'scripts', 'utils'), mode=0o775)
+
+            os.system('chmod -R 775 '+'../../outdata/'+exp_conf['exp_name']+exp_conf['scheme'])
+
+            run(exp_conf, net_conf, run_dir)
         
         if(exp_conf['scheme'] == 'finetune_denoised'):
             net_conf_denoise_model = dict(net_conf)
@@ -476,6 +505,7 @@ def run(exp_conf, net_conf, run_dir):
         cp(f, join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'], run_dir,'scripts', 'starvoid', basename(f)))
 
     for f in glob.glob(join('scripts', 'utils', '*')):
+        print(f)
         cp(f, join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'], run_dir,'scripts', 'utils', basename(f)))
 
     log_file = 'experiment.log'

@@ -26,6 +26,55 @@ def create_patches(images, masks, size):
     return patchesimages, patchesmasks
 
 
+if(exp_params['scheme'] == 'finetune_denoised_noisy'):
+    
+    # Config from json file
+    with open(exp_params['model_name']+str('_n2v_init_model')+ '/config.json', 'r') as f:
+        n2v_init_conf = json.load(f)
+    with open(exp_params['model_name']+str('_seg_model')+ '/config.json', 'r') as f:
+        seg_conf = json.load(f)
+        
+    denoise_train_files = np.load(exp_params['train_path'])
+    denoise_X_train = denoise_train_files['X_train']
+    denoise_Y_train = denoise_train_files['Y_train']
+    denoise_X_val = denoise_train_files['X_val'].astype(np.float32)
+    denoise_Y_val = denoise_train_files['Y_val'].astype(np.float32)
+    denoise_test_files = np.load(exp_params['test_path'])
+    denoise_X_test = denoise_test_files['X_test']
+    denoise_Y_test = denoise_test_files['Y_test']
+    X_train_N2V = np.concatenate((denoise_X_train, denoise_X_test))
+    Y_train_N2V = np.concatenate((denoise_Y_train, denoise_Y_test))
+    X_val_N2V = denoise_X_val
+    Y_val_N2V = denoise_Y_val 
+    mean, std = np.mean(X_train_N2V), np.std(X_train_N2V)
+    denoise_obj = TrainN2V(n2v_init_conf, exp_params) 
+    model = denoise_obj.prepare_data_and_denoise(X_train_N2V, Y_train_N2V, X_val_N2V, Y_val_N2V, '_n2v_init_model')
+    
+    denoise_X_train = normalize(denoise_X_train, mean, std) #New lines
+    denoise_X_val = normalize(denoise_X_val, mean, std) #New lines
+    denoise_X_test = normalize(denoise_X_test, mean, std) #New lines
+    
+    denoise_pred_train = PredictN2V(exp_params, model) #Load above model
+    X_train_d, X_val_d, X_test_d = denoise_pred_train.predict(denoise_X_train, denoise_X_val, denoise_X_test, mean, std)
+    
+    X_train_d = X_train_d[:,:,:,0] 
+    X_val_d = X_val_d[:,:,:,0]
+    X_test_d = X_test_d[:,:,:,0]
+    
+    seg_obj = TrainSeg(seg_conf, exp_params, load_weights = True)
+    seg_X_train = X_train_d
+    seg_Y_train = denoise_Y_train
+    seg_X_val = X_val_d.astype(np.float32)
+    seg_Y_val = denoise_Y_val
+    seg_obj.prepare_data_and_segment(seg_X_train, seg_Y_train, seg_X_val, seg_Y_val)
+    
+    import compute_seg_threshold
+    X_test = X_test_d
+    seg_pred = PredictSeg(exp_params)
+    seg_pred.predict(X_test, seg_X_train, '_seg_model')
+    
+
+
 if(exp_params['scheme'] == 'finetune_denoised'):
     
     # Config from json file
@@ -52,10 +101,14 @@ if(exp_params['scheme'] == 'finetune_denoised'):
     denoise_obj = TrainN2V(denoise_conf, exp_params) 
     model = denoise_obj.prepare_data_and_denoise(X_train_N2V, Y_train_N2V, X_val_N2V, Y_val_N2V, '_denoise_model')
     
-    denoise_pred_train = PredictN2V(exp_params, model) #Load above model
-    X_train_d, X_val_d, X_test_d = denoise_pred_train.predict(denoise_X_train, denoise_X_val, denoise_X_test, '_denoise_model', mean, std)
+    denoise_X_train = normalize(denoise_X_train, mean, std) #New lines
+    denoise_X_val = normalize(denoise_X_val, mean, std) #New lines
+    denoise_X_test = normalize(denoise_X_test, mean, std) #New lines
     
-    X_train_d = X_train_d[:,:,:,0] ##Is it essential here too?
+    denoise_pred_train = PredictN2V(exp_params, model) #Load above model
+    X_train_d, X_val_d, X_test_d = denoise_pred_train.predict(denoise_X_train, denoise_X_val, denoise_X_test, mean, std)
+    
+    X_train_d = X_train_d[:,:,:,0] 
     X_val_d = X_val_d[:,:,:,0]
     X_test_d = X_test_d[:,:,:,0]
     
@@ -64,10 +117,11 @@ if(exp_params['scheme'] == 'finetune_denoised'):
     n2v_init_Y_train = denoise_Y_train
     n2v_init_X_val = X_val_d.astype(np.float32)
     n2v_init_Y_val = denoise_Y_val
-    X_train_N2V = np.concatenate((n2v_init_X_train, X_test_d))
-    Y_train_N2V = np.concatenate((n2v_init_Y_train, denoise_Y_test))
-    mean, std = np.mean(X_train_N2V), np.std(X_train_N2V)
-    model = n2v_init_obj.prepare_data_and_denoise(n2v_init_X_train, n2v_init_Y_train, n2v_init_X_val, n2v_init_Y_val, '_n2v_init_model')
+    X_train_init_N2V = np.concatenate((n2v_init_X_train, X_test_d))
+    Y_train_init_N2V = np.concatenate((n2v_init_Y_train, denoise_Y_test))
+    # mean_n, std_n = np.mean(X_train_N2V), np.std(X_train_N2V)
+    # model = n2v_init_obj.prepare_data_and_denoise(n2v_init_X_train, n2v_init_Y_train, n2v_init_X_val, n2v_init_Y_val, '_n2v_init_model')
+    model = n2v_init_obj.prepare_data_and_denoise(X_train_init_N2V, Y_train_init_N2V, n2v_init_X_val, n2v_init_Y_val, '_n2v_init_model')
      
     
     seg_obj = TrainSeg(seg_conf, exp_params, load_weights = True)
@@ -105,7 +159,8 @@ if(exp_params['scheme'] == 'finetune'):
     Y_val_N2V = n2v_init_Y_val 
     mean, std = np.mean(X_train_N2V), np.std(X_train_N2V)
     n2v_init_obj = TrainN2V(n2v_init_conf, exp_params)
-    model = n2v_init_obj.prepare_data_and_denoise(n2v_init_X_train, n2v_init_Y_train, n2v_init_X_val, n2v_init_Y_val, '_n2v_init_model')
+    # model = n2v_init_obj.prepare_data_and_denoise(n2v_init_X_train, n2v_init_Y_train, n2v_init_X_val, n2v_init_Y_val, '_n2v_init_model')
+    model = n2v_init_obj.prepare_data_and_denoise(X_train_N2V, Y_train_N2V, n2v_init_X_val, n2v_init_Y_val, '_n2v_init_model')
     
     seg_obj = TrainSeg(seg_conf, exp_params, load_weights = True)
     seg_train_files = np.load(exp_params['train_path']) 
@@ -153,7 +208,7 @@ if(exp_params['scheme'] == 'sequential'):
     denoise_X_test = normalize(denoise_X_test, mean, std) 
     
     denoise_pred_train = PredictN2V(exp_params, model) #Load above model
-    X_train_d, X_val_d, X_test_d = denoise_pred_train.predict(denoise_X_train, denoise_X_val, denoise_X_test, '_denoise_model', mean, std)
+    X_train_d, X_val_d, X_test_d = denoise_pred_train.predict(denoise_X_train, denoise_X_val, denoise_X_test, mean, std)
     
     X_train_d = X_train_d[:,:,:,0]
     X_val_d = X_val_d[:,:,:,0]
@@ -169,8 +224,9 @@ if(exp_params['scheme'] == 'sequential'):
     
     import compute_seg_threshold
     
-    files = np.load(exp_params["test_path"]) 
-    X_test = files['X_test']
+    # files = np.load(exp_params["test_path"])
+#     X_test = files['X_test']
+    X_test = X_test_d
     seg_pred = PredictSeg(exp_params)
     seg_pred.predict(X_test, seg_X_train, '_seg_model')
     

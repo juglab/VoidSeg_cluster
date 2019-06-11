@@ -29,17 +29,20 @@ exp_paths = args.exp
 
 
 gt_files = glob(join(gt_path, 'man_seg*.tif'))
+print(len(gt_files))
 gt_images = {int(basename(x)[8:-4]) : imread(x) for x in gt_files}
 gt_images_keys = [x for x in gt_images.keys()]
 gt_images_keys.sort()
 
 exp_list = []
 for exp in exp_paths:
-    subdirs = {int(basename(x).split('_')[1]) : x for x in glob(join(exp, '*'))}
+    subdirs = {(float(basename(x).split('_')[1])) : x for x in glob(join(exp, '*'))}
+    print(subdirs)
     subdirs_keys = [x for x in subdirs.keys()]
     subdirs_keys.sort()
     list_SEGs = []
     for k in subdirs_keys:
+
         seg_score = 0
         result_files = glob(join(subdirs[k], 'foreground*.tif'))
         result_images = {int(basename(x)[10:-4]) : imread(x) for x in result_files}
@@ -61,10 +64,11 @@ for exp in exp_paths:
 
 X_train_frac = subdirs_keys
 plt.figure(figsize=(10,5))
+print(X_train_frac)
 for exp, path in zip(exp_list, exp_paths):
     plt.plot(X_train_frac, exp, label=basename(path))
 
-plt.ylim(0.55, 0.8)
+plt.ylim(0, 1)
 plt.xlabel('Training Data Fraction')
 plt.ylabel('SEG Score')
 plt.legend(loc='lower right')

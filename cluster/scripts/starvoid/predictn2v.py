@@ -23,7 +23,7 @@ class PredictN2V:
     def denormalize(self, x, mean, std):
         return x*std + mean
 
-    def predict(self,X_train, X_val, X_test, model_id, mean, std):
+    def predict(self,X_train, X_val, X_test, mean, std):
         predictions = []
         
         # model = CARE(None, name= self.exp_params['model_name']+str(model_id), basedir= self.exp_params['base_dir'])
