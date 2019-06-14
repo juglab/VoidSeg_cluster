@@ -5,6 +5,7 @@ from skimage.segmentation import find_boundaries
 import json
 from os.path import join
 import pickle
+from train_utils import augment_data
 
 class TrainSeg:
     
@@ -53,15 +54,20 @@ class TrainSeg:
         mean, std = np.mean(X_train), np.std(X_train)
         X_train = self.normalize(X_train, mean, std)
         X_val = self.normalize(X_val, mean, std)
-        Y_train_oneHot = self.convert_to_oneHot(Y_train)
-        Y_val_oneHot = self.convert_to_oneHot(Y_val)
-        Y_train = np.concatenate((X_train[..., np.newaxis], np.zeros(X_train.shape, dtype=np.float32)[...,np.newaxis], Y_train_oneHot), axis=3)
         X_train, Y_train = self.shuffle_train_data(X_train, Y_train)
         X_train, Y_train = self.fractionate_train_data(X_train, Y_train)
-        X_train_aug, Y_train_aug = self.augment_train_data(X_train, Y_train)
-        X_validation, Y_validation = self.prepare_val_data(X_val, Y_val, Y_val_oneHot)
-        X_validation_aug, Y_validation_aug = self.augment_val_data(X_validation, Y_validation)
-        self.build_model(X_train_aug, Y_train_aug, X_validation_aug, Y_validation_aug)
+        if(self.exp_params['augment']):    
+            X_train, Y_train = augment_data(X_train, Y_train)
+            X_val, Y_val = augment_data(X_val, Y_val)
+            
+        Y_train_oneHot = self.convert_to_oneHot(Y_train)
+        Y_val_oneHot = self.convert_to_oneHot(Y_val)
+        
+        Y_train = np.concatenate((X_train[..., np.newaxis], np.zeros(X_train.shape, dtype=np.float32)[...,np.newaxis], Y_train_oneHot), axis=3)
+        
+        X_val, Y_val = self.prepare_val_data(X_val, Y_val, Y_val_oneHot)
+        
+        self.build_model(X_train, Y_train, X_val, Y_val)
     
     
     def shuffle_train_data(self, X_train, Y_train):
@@ -82,21 +88,6 @@ class TrainSeg:
         
         return X_train, Y_train
             
-    def augment_train_data(self, X_train, Y_train):
-    
-        if 'augment' in self.exp_params.keys():
-            if self.exp_params['augment']:
-                print('augmenting training data')
-                X_ = X_train.copy()
-                X_train_aug = np.concatenate((X_train, np.rot90(X_, 2, (1, 2))))
-                X_train_aug = np.concatenate((X_train_aug, np.flip(X_train_aug, axis=1), np.flip(X_train_aug, axis=2)))
-                Y_ = Y_train.copy()
-                Y_train_aug = np.concatenate((Y_train, np.rot90(Y_, 2, (1, 2))))
-                Y_train_aug = np.concatenate((Y_train_aug, np.flip(Y_train_aug, axis=1), np.flip(Y_train_aug, axis=2)))
-                print('Training data size after augmentation', X_train_aug.shape)
-                print('Training data size after augmentation', Y_train_aug.shape)
-        
-        return X_train_aug, Y_train_aug
             
     def prepare_val_data(self, X_val, Y_val, Y_val_oneHot):
         
@@ -110,23 +101,6 @@ class TrainSeg:
         
         return X_validation, Y_validation
     
-
-    def augment_val_data(self, X_validation, Y_validation):
-    
-        # Augment validation
-        if 'augment' in self.exp_params.keys():
-            if self.exp_params['augment']:
-                print('augment validation data')
-                X_ = X_validation.copy()
-                X_validation_aug = np.concatenate((X_validation, np.rot90(X_, 2, (1, 2))))
-                X_validation_aug = np.concatenate(
-                    (X_validation_aug, np.flip(X_validation_aug, axis=1), np.flip(X_validation_aug, axis=2)))
-                Y_ = Y_validation.copy()
-                Y_validation_aug = np.concatenate((Y_validation, np.rot90(Y_, 2, (1, 2))))
-                Y_validation_aug = np.concatenate(
-                    (Y_validation_aug, np.flip(Y_validation_aug, axis=1), np.flip(Y_validation_aug, axis=2)))
-                    
-        return X_validation_aug, Y_validation_aug
                 
         
     def build_model(self, X_train_aug, Y_train_aug, X_validation_aug, Y_validation_aug):

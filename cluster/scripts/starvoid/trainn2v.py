@@ -5,6 +5,7 @@ from skimage.segmentation import find_boundaries
 import json
 from os.path import join
 import pickle
+from train_utils import augment_data
 
 class TrainN2V:
     
@@ -52,16 +53,21 @@ class TrainN2V:
         mean, std = np.mean(X_train), np.std(X_train)
         X_train = self.normalize(X_train, mean, std)
         X_val = self.normalize(X_val, mean, std)
+        
+        X_train, Y_train = self.shuffle_train_data(X_train, Y_train)
+        if(self.exp_params['augment']):  
+            X_train, Y_train = augment_data(X_train, Y_train)
+            X_val, Y_val = augment_data(X_val, Y_val)
+        
         Y_train_oneHot = self.convert_to_oneHot(Y_train)
         Y_val_oneHot = self.convert_to_oneHot(Y_val)
+        
         Y_train = np.concatenate((X_train[..., np.newaxis], np.zeros(X_train.shape, dtype=np.float32)[...,np.newaxis], Y_train_oneHot), axis=3)
-        X_train, Y_train = self.shuffle_train_data(X_train, Y_train)
-        train_frac = int(np.round((self.exp_params['train_frac'] / 100) * X_train.shape[0]))
-        Y_train = self.zeroout_seg_channels(Y_train, train_frac)
-        X_train_aug, Y_train_aug = self.augment_train_data(X_train, Y_train)
-        X_validation, Y_validation = self.prepare_val_data(X_val, Y_val, Y_val_oneHot)
-        X_validation_aug, Y_validation_aug = self.augment_val_data(X_validation, Y_validation)
-        m = self.build_model(X_train_aug, Y_train_aug, X_validation_aug, Y_validation_aug, id)
+        X_val, Y_val = self.prepare_val_data(X_val, Y_val, Y_val_oneHot)
+        Y_train = self.zeroout_seg_channels(Y_train)
+        Y_val = self.zeroout_seg_channels(Y_val)
+
+        m = self.build_model(X_train, Y_train, X_val, Y_val, id)
         
         return m
     
@@ -76,26 +82,12 @@ class TrainN2V:
                 Y_train = Y_train[seed_ind]
         return X_train, Y_train
     
-    def zeroout_seg_channels(self, Y_train, train_frac):
-        Y_train[train_frac:, ..., 1:] *= 0
+    def zeroout_seg_channels(self, Y_train):
+        Y_train[ ..., 2:] *= 0
         
         return Y_train
             
-    def augment_train_data(self, X_train, Y_train):
-    
-        if 'augment' in self.exp_params.keys():
-            if self.exp_params['augment']:
-                print('augmenting training data')
-                X_ = X_train.copy()
-                X_train_aug = np.concatenate((X_train, np.rot90(X_, 2, (1, 2))))
-                X_train_aug = np.concatenate((X_train_aug, np.flip(X_train_aug, axis=1), np.flip(X_train_aug, axis=2)))
-                Y_ = Y_train.copy()
-                Y_train_aug = np.concatenate((Y_train, np.rot90(Y_, 2, (1, 2))))
-                Y_train_aug = np.concatenate((Y_train_aug, np.flip(Y_train_aug, axis=1), np.flip(Y_train_aug, axis=2)))
-                print('Training data size after augmentation', X_train.shape)
-                print('Training data size after augmentation', Y_train.shape)
-        
-        return X_train_aug, Y_train_aug
+  
             
     def prepare_val_data(self, X_val, Y_val, Y_val_oneHot):
         
@@ -109,22 +101,6 @@ class TrainN2V:
         
         return X_validation, Y_validation
 
-    def augment_val_data(self, X_validation, Y_validation):
-    
-        # Augment validation
-        if 'augment' in self.exp_params.keys():
-            if self.exp_params['augment']:
-                print('augment validation data')
-                X_ = X_validation.copy()
-                X_validation_aug = np.concatenate((X_validation, np.rot90(X_, 2, (1, 2))))
-                X_validation_aug = np.concatenate(
-                    (X_validation_aug, np.flip(X_validation_aug, axis=1), np.flip(X_validation_aug, axis=2)))
-                Y_ = Y_validation.copy()
-                Y_validation_aug = np.concatenate((Y_validation, np.rot90(Y_, 2, (1, 2))))
-                Y_validation_aug = np.concatenate(
-                    (Y_validation_aug, np.flip(Y_validation_aug, axis=1), np.flip(Y_validation_aug, axis=2)))
-                    
-        return X_validation_aug, Y_validation_aug
         
     def build_model(self, X_train_aug, Y_train_aug, X_validation_aug, Y_validation_aug, id):
         model = CARE(None, name= self.exp_params['model_name']+str(id), basedir= self.exp_params['base_dir']) 
@@ -134,6 +110,5 @@ class TrainN2V:
                   'wb') as file_pi: 
             pickle.dump(hist.history, file_pi)
         model.load_weights('weights_best.h5')
-        # model.load_weights(self.exp_params['base_dir']+'/'+self.exp_params['model_name']+str(id)+'/weights_best.h5'))
-        # model.load_weights('/lustre/projects/juglab/StarVoid/outdata/clean_testsequential/train_1.0/clean_model_denoise_model/weights_best.h5') #TODO change path
+
         return model

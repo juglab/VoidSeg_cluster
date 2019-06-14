@@ -153,14 +153,29 @@ if(exp_params['scheme'] == 'finetune'):
     n2v_init_test_files = np.load(exp_params['test_path'])
     n2v_init_X_test = n2v_init_test_files['X_test']
     n2v_init_Y_test = n2v_init_test_files['Y_test']
-    X_train_N2V = np.concatenate((n2v_init_X_train, n2v_init_X_test))
-    Y_train_N2V = np.concatenate((n2v_init_Y_train, n2v_init_Y_test))
+    
+    for image_num in range(n2v_init_X_test.shape[0]):
+         
+        patchesimages, patchesmasks = create_patches(n2v_init_X_test[image_num], n2v_init_Y_test[image_num], n2v_init_X_train.shape[1])
+        if(image_num == 0):
+            
+            X_test_patches = patchesimages
+            Y_test_patches = patchesmasks
+        else:
+            X_test_patches = np.concatenate((X_test_patches, patchesimages))
+            Y_test_patches = np.concatenate((Y_test_patches, patchesmasks))
+    
+    # X_train_N2V = np.concatenate((n2v_init_X_train, n2v_init_X_test))
+    # Y_train_N2V = np.concatenate((n2v_init_Y_train, n2v_init_Y_test))
+    X_train_N2V = np.concatenate((n2v_init_X_train, X_test_patches))
+    Y_train_N2V = np.concatenate((n2v_init_Y_train, Y_test_patches))
     X_val_N2V = n2v_init_X_val
     Y_val_N2V = n2v_init_Y_val 
+    
     mean, std = np.mean(X_train_N2V), np.std(X_train_N2V)
     n2v_init_obj = TrainN2V(n2v_init_conf, exp_params)
-    # model = n2v_init_obj.prepare_data_and_denoise(n2v_init_X_train, n2v_init_Y_train, n2v_init_X_val, n2v_init_Y_val, '_n2v_init_model')
-    model = n2v_init_obj.prepare_data_and_denoise(X_train_N2V, Y_train_N2V, n2v_init_X_val, n2v_init_Y_val, '_n2v_init_model')
+   
+    model = n2v_init_obj.prepare_data_and_denoise(X_train_N2V, Y_train_N2V, X_val_N2V, Y_val_N2V, '_n2v_init_model')
     
     seg_obj = TrainSeg(seg_conf, exp_params, load_weights = True)
     seg_train_files = np.load(exp_params['train_path']) 
@@ -193,12 +208,29 @@ if(exp_params['scheme'] == 'sequential'):
     denoise_test_files = np.load(exp_params['test_path'])
     denoise_X_test = denoise_test_files['X_test']
     denoise_Y_test = denoise_test_files['Y_test']
-    # patchesimages, patchesmasks = create_patches(denoise_X_test, denoise_Y_test, denoise_X_train.shape[1])
-    # print(denoise_X_train.shape, patchesimages.shape)
-    X_train_N2V = np.concatenate((denoise_X_train, denoise_X_test))
-    Y_train_N2V = np.concatenate((denoise_Y_train, denoise_Y_test))
+    print('train, val, test, shapes:',denoise_X_train.shape, denoise_X_val.shape, denoise_X_test.shape)
+    
+
+    for image_num in range(denoise_X_test.shape[0]):
+         
+        patchesimages, patchesmasks = create_patches(denoise_X_test[image_num], denoise_Y_test[image_num], denoise_X_train.shape[1])
+        if(image_num == 0):
+            
+            X_test_patches = patchesimages
+            Y_test_patches = patchesmasks
+        else:
+            X_test_patches = np.concatenate((X_test_patches, patchesimages))
+            Y_test_patches = np.concatenate((Y_test_patches, patchesmasks))
+
+    # X_train_N2V = np.concatenate((denoise_X_train, denoise_X_test))
+#     Y_train_N2V = np.concatenate((denoise_Y_train, denoise_Y_test))
+    X_train_N2V = np.concatenate((denoise_X_train, X_test_patches))
+    Y_train_N2V = np.concatenate((denoise_Y_train, Y_test_patches))
     X_val_N2V = denoise_X_val
     Y_val_N2V = denoise_Y_val 
+    
+    print('train, val shapes for N2V:',X_train_N2V.shape, X_val_N2V.shape)
+
     mean, std = np.mean(X_train_N2V), np.std(X_train_N2V)
     denoise_obj = TrainN2V(denoise_conf, exp_params) 
     model = denoise_obj.prepare_data_and_denoise(X_train_N2V, Y_train_N2V, X_val_N2V, Y_val_N2V, '_denoise_model')
@@ -208,32 +240,46 @@ if(exp_params['scheme'] == 'sequential'):
     denoise_X_test = normalize(denoise_X_test, mean, std) 
     
     denoise_pred_train = PredictN2V(exp_params, model) #Load above model
+   
     X_train_d, X_val_d, X_test_d = denoise_pred_train.predict(denoise_X_train, denoise_X_val, denoise_X_test, mean, std)
     
     X_train_d = X_train_d[:,:,:,0]
     X_val_d = X_val_d[:,:,:,0]
-    X_test_d = X_test_d[:,:,:,0]
+    
+    
+    for test_img_num in range(X_test_d.shape[0]):
+        X_test_d[test_img_num]= X_test_d[test_img_num][:,:,0]
+    
+    np.savez_compressed(exp_params['base_dir']+'TrainValTest_denoised.npz',  X_train_denoised=X_train_d, X_val_denoised=X_val_d, X_test_denoised = X_test_d)
+    print('denoised train, val, test, shapes:',X_train_d.shape, X_val_d.shape, X_test_d.shape)
     
     seg_obj = TrainSeg(seg_conf, exp_params, load_weights = False)
-    seg_X_train =  X_train_d
-    seg_Y_train =  denoise_Y_train
-    seg_X_val = X_val_d.astype(np.float32)
-    seg_Y_val = denoise_Y_val
+    
+    print("Let's see!!!")
+    non_noisy_files = np.load(exp_params['base_dir']+'TrainValTest_denoised.npz')
+    seg_X_train = non_noisy_files['X_train_denoised']
+    seg_X_val = non_noisy_files['X_val_denoised'].astype(np.float32)
+    seg_X_test = non_noisy_files['X_test_denoised']
+    # seg_X_train =  X_train_d
+    
+    gt_files = np.load(exp_params['train_path'])
+    seg_Y_train = gt_files['Y_train']
+    seg_Y_val = gt_files['Y_val'].astype(np.float32)
+    # seg_Y_train =  denoise_Y_train
+    # seg_X_val = X_val_d
+    # seg_Y_val = denoise_Y_val
     print('seg_X_train:',seg_X_train.shape, 'seg_Y_train:',seg_Y_train.shape, 'seg_X_val:',seg_X_val.shape, 'seg_Y_val:',seg_Y_val.shape)
     seg_obj.prepare_data_and_segment(seg_X_train, seg_Y_train, seg_X_val, seg_Y_val)
     
     import compute_seg_threshold
-    
-    # files = np.load(exp_params["test_path"])
-#     X_test = files['X_test']
-    X_test = X_test_d
+
+    # X_test = X_test_d
     seg_pred = PredictSeg(exp_params)
-    seg_pred.predict(X_test, seg_X_train, '_seg_model')
+    seg_pred.predict(seg_X_test, seg_X_train, '_seg_model')
     
     
     
 if(exp_params['scheme'] == 'baseline'): 
-    # Config from json file
     
     with open(exp_params['model_name']+str('_seg_model')+ '/config.json', 'r') as f:
         seg_conf = json.load(f)
