@@ -387,25 +387,95 @@ def create_configs(config, run_name, seed, train_frac):
 def create_n2v_net_config(config):
     n2v_net = {
         'n_dim' : config['n_dim'],
-        'axes' : config['axes']
+        'axes' : config['axes'],
+        'augment' : config['augment'],
+        'use_denoising': config['use_denoising'],
+        'n2v_neighborhood_radius' : config['n2v_neighborhood_radius'],
+        'n2v_manipulator' : config['n2v_manipulator'],
+        'n2v_patch_shape' : config['n2v_patch_shape' ],
+        'n2v_num_pix' : config['n2v_num_pix'],
+        'batch_norm' : config['batch_norm'],
+        'train_reduce_lr' : config['train_reduce_lr'],
+        'train_checkpoint' : config['train_checkpoint'],
+        'train_tensorboard' : config['train_tensorboard'],
+        'train_batch_size' : config[ 'train_batch_size'],
+        'n2v_train_learning_rate' : config['n2v_train_learning_rate'],
+        'n2v_train_steps_per_epoch' : config['n2v_train_steps_per_epoch'],
+        'n2v_train_epochs' : config['n2v_train_epochs'],
+        'train_loss' : config['train_loss'],
+        'unet_input_shape' : config['unet_input_shape'],
+        'unet_last_activation' : config['unet_last_activation'],
+        'unet_n_first' : config['unet_n_first'],
+        'unet_kern_size' : config['unet_kern_size'],
+        'unet_n_depth' : config['unet_n_depth'],
+        'n_channel_out' : config['n_channel_out'],
+        'n_channel_in' : config['n_channel_in']
+
+
     }
 
     return n2v_net
-    print('Implementation missing.')
 
 
 def create_ini_net_config(config):
     ini_net = {
-        'n_dim' : config['n_dim']
+        'n_dim' : config['n_dim'],
+        'axes' : config['axes'],
+        'augment' : config['augment'],
+        'use_denoising': config['use_denoising'],
+        'n2v_neighborhood_radius' : config['n2v_neighborhood_radius'],
+        'n2v_manipulator' : config['n2v_manipulator'],
+        'n2v_patch_shape' : config['n2v_patch_shape' ],
+        'n2v_num_pix' : config['n2v_num_pix'],
+        'batch_norm' : config['batch_norm'],
+        'train_reduce_lr' : config['train_reduce_lr'],
+        'train_checkpoint' : config['train_checkpoint'],
+        'train_tensorboard' : config['train_tensorboard'],
+        'train_batch_size' : config[ 'train_batch_size'],
+        'ini_train_learning_rate' : config['ini_train_learning_rate'],
+        'ini_train_steps_per_epoch' : config['ini_train_steps_per_epoch'],
+        'ini_train_epochs' : config['ini_train_epochs'],
+        'train_loss' : config['train_loss'],
+        'unet_input_shape' : config['unet_input_shape'],
+        'unet_last_activation' : config['unet_last_activation'],
+        'unet_n_first' : config['unet_n_first'],
+        'unet_kern_size' : config['unet_kern_size'],
+        'unet_n_depth' : config['unet_n_depth'],
+        'n_channel_out' : config['n_channel_out'],
+        'n_channel_in' : config['n_channel_in']
     }
     return ini_net
-    print('Implementation missing.')
 
 
 def create_seg_net_config(config):
-    seg_net = {}
+    seg_net = {
+        'n_dim': config['n_dim'],
+        'axes': config['axes'],
+        'augment': config['augment'],
+        'use_denoising': config['use_denoising'],
+        'n2v_neighborhood_radius': config['n2v_neighborhood_radius'],
+        'n2v_manipulator': config['n2v_manipulator'],
+        'n2v_patch_shape': config['n2v_patch_shape'],
+        'n2v_num_pix': config['n2v_num_pix'],
+        'batch_norm': config['batch_norm'],
+        'train_reduce_lr': config['train_reduce_lr'],
+        'train_checkpoint': config['train_checkpoint'],
+        'train_tensorboard': config['train_tensorboard'],
+        'train_batch_size': config['train_batch_size'],
+        'ini_train_learning_rate': config['ini_train_learning_rate'],
+        'ini_train_steps_per_epoch': config['ini_train_steps_per_epoch'],
+        'ini_train_epochs': config['ini_train_epochs'],
+        'train_loss': config['train_loss'],
+        'unet_input_shape': config['unet_input_shape'],
+        'unet_last_activation': config['unet_last_activation'],
+        'unet_n_first': config['unet_n_first'],
+        'unet_kern_size': config['unet_kern_size'],
+        'unet_n_depth': config['unet_n_depth'],
+        'n_channel_out': config['n_channel_out'],
+        'n_channel_in': config['n_channel_in'],
+        'train_frac' : config['train_frac']
+    }
     return seg_net
-    print('Implementation missing.')
 
 
 def create_and_copy_setup(exp_conf, run_dir, net_conf):
