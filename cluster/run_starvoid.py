@@ -388,7 +388,6 @@ def create_n2v_net_config(config):
     n2v_net = {
         'n_dim' : config['n_dim'],
         'axes' : config['axes'],
-        'augment' : config['augment'],
         'use_denoising': config['use_denoising'],
         'n2v_neighborhood_radius' : config['n2v_neighborhood_radius'],
         'n2v_manipulator' : config['n2v_manipulator'],
@@ -421,7 +420,6 @@ def create_ini_net_config(config):
     ini_net = {
         'n_dim' : config['n_dim'],
         'axes' : config['axes'],
-        'augment' : config['augment'],
         'use_denoising': config['use_denoising'],
         'n2v_neighborhood_radius' : config['n2v_neighborhood_radius'],
         'n2v_manipulator' : config['n2v_manipulator'],
@@ -451,7 +449,6 @@ def create_seg_net_config(config):
     seg_net = {
         'n_dim': config['n_dim'],
         'axes': config['axes'],
-        'augment': config['augment'],
         'use_denoising': config['use_denoising'],
         'n2v_neighborhood_radius': config['n2v_neighborhood_radius'],
         'n2v_manipulator': config['n2v_manipulator'],
@@ -473,7 +470,6 @@ def create_seg_net_config(config):
         'unet_n_depth': config['unet_n_depth'],
         'n_channel_out': config['n_channel_out'],
         'n_channel_in': config['n_channel_in'],
-        'train_frac' : config['train_frac']
     }
     return seg_net
 
