@@ -44,7 +44,7 @@ class TrainFracValidator(Validator):
         for v in values:
             try:
                 float_v = float(v)
-                if float_v > 100:
+                if float_v < 0 or float_v > 100:
                     raise ValidationError(
                         message='Enter a comma separated list of floats between 0 and 100.',
                         cursor_position=len(document.text)
@@ -113,7 +113,7 @@ def main():
                 'type': 'input',
                 'name': 'train_frac',
                 'message': 'Training data fractions in x%:',
-                'default': '1,2,3,5,10,20,30,40,50,60,70,80,90,100',
+                'default': '0.25,0.5,1.0,2.0,4.0,8.0,16.0,32.0,64.0,100.0',
                 'validate': TrainFracValidator,
                 'filter': lambda val: [float(x) for x in val.split(',')]
             },
@@ -186,24 +186,72 @@ def main():
             },
             {
                 'type': 'input',
-                'name': 'train_epochs',
-                'message': 'train_epochs',
+                'name': 'n2v_train_epochs',
+                'message': 'n2v_train_epochs',
                 'default': '200',
                 'validate': lambda val: int(val) > 0,
                 'filter': lambda val: int(val)
             },
             {
                 'type': 'input',
-                'name': 'train_steps_per_epoch',
-                'message': 'train_steps_per_epoch',
+                'name': 'seg_train_epochs',
+                'message': 'seg_train_epochs',
+                'default': '200',
+                'validate': lambda val: int(val) > 0,
+                'filter': lambda val: int(val)
+            },
+            {
+                'type': 'input',
+                'name': 'ini_train_epochs',
+                'message': 'ini_train_epochs',
+                'default': '200',
+                'validate': lambda val: int(val) > 0,
+                'filter': lambda val: int(val)
+            },
+            {
+                'type': 'input',
+                'name': 'n2v_train_steps_per_epoch',
+                'message': 'n2v_train_steps_per_epoch',
                 'default': '400',
                 'validate': lambda val: int(val) > 0,
                 'filter': lambda val: int(val)
             },
             {
                 'type': 'input',
-                'name': 'train_learning_rate',
-                'message': 'train_learning_rate',
+                'name': 'seg_train_steps_per_epoch',
+                'message': 'seg_train_steps_per_epoch',
+                'default': '400',
+                'validate': lambda val: int(val) > 0,
+                'filter': lambda val: int(val)
+            },
+            {
+                'type': 'input',
+                'name': 'ini_train_steps_per_epoch',
+                'message': 'ini_train_steps_per_epoch',
+                'default': '400',
+                'validate': lambda val: int(val) > 0,
+                'filter': lambda val: int(val)
+            },
+            {
+                'type': 'input',
+                'name': 'n2v_train_learning_rate',
+                'message': 'n2v_train_learning_rate',
+                'default': '0.0004',
+                'validate': lambda val: float(val) > 0,
+                'filter': lambda val: float(val)
+            },
+            {
+                'type': 'input',
+                'name': 'seg_train_learning_rate',
+                'message': 'seg_train_learning_rate',
+                'default': '0.0004',
+                'validate': lambda val: float(val) > 0,
+                'filter': lambda val: float(val)
+            },
+            {
+                'type': 'input',
+                'name': 'ini_train_learning_rate',
+                'message': 'ini_train_learning_rate',
                 'default': '0.0004',
                 'validate': lambda val: float(val) > 0,
                 'filter': lambda val: float(val)
@@ -297,26 +345,83 @@ def main():
         
         pwd = os.getcwd()
         for p in config['train_frac']:
-            os.chdir(pwd)
-            exp_conf = {
-                'exp_name' : config['exp_name'],
-                'scheme' : config['scheme'],
-                'train_path': config['train_path'],
-                'test_path': config['test_path'],
-                'is_seeding': config['is_seeding'],
-                'random_seed': config['random_seed'],
-                'augment': config['augment'],
-                'train_frac': p,
-                'base_dir': join('../..', config['exp_name']+config['scheme'], 'train_'+str(p)),
-                'model_name': config['exp_name'].split('_')[0] + '_model'
-            }
-
-            net_conf = {}
-            for k in config.keys():
-                if k not in exp_conf.keys():
-                    net_conf[k] = config[k]
+            if config['is_seeding']:
+                for run_idx in [1,2,3,4,5,6,7,8]:
+                    os.chdir(pwd)
+                    run_name = config['exp_name']+'_run'+str(run_idx)
+                    exp_conf, net_conf = create_configs(config, run_name, seed=run_idx, train_frac=p)
+                    start_experiment(exp_conf, net_conf, 'train_'+str(p))
+            else:
+                os.chdir(pwd)
+                exp_conf, net_conf = create_configs(config, config['exp_name'], seed=config['random_seed'], train_frac=p)
 
             start_experiment(exp_conf, net_conf, 'train_'+str(p))
+
+
+def create_configs(config, run_name, seed, train_frac):
+    exp_conf = {
+        'exp_name' : run_name,
+        'scheme' : config['scheme'],
+        'train_path': config['train_path'],
+        'test_path': config['test_path'],
+        'is_seeding': config['is_seeding'],
+        'random_seed': seed,
+        'augment': config['augment'],
+        'train_frac': train_frac,
+        'base_dir': join('../..', config['exp_name']+config['scheme'], 'train_'+str(train_frac)),
+        'model_name': config['exp_name'].split('_')[0] + '_model'
+    }
+
+    n2v_net = create_n2v_net_config(config)
+    ini_net = create_ini_net_config(config)
+    seg_net = create_seg_net_config(config)
+
+    net_conf = {}
+    for k in config.keys():
+        if k not in exp_conf.keys():
+            net_conf[k] = config[k]
+
+    return exp_conf, net_conf
+
+
+def create_n2v_net_config(config):
+    n2v_net = {
+        'n_dim' : config['n_dim'],
+        'axes' : config['axes']
+    }
+
+    return n2v_net
+    print('Implementation missing.')
+
+
+def create_ini_net_config(config):
+    ini_net = {
+        'n_dim' : config['n_dim']
+    }
+    return ini_net
+    print('Implementation missing.')
+
+
+def create_seg_net_config(config):
+    seg_net = {}
+    return seg_net
+    print('Implementation missing.')
+
+
+def create_and_copy_setup(exp_conf, run_dir, net_conf):
+    os.makedirs(join('../..', 'outdata', exp_conf['exp_name'], run_dir, exp_conf['model_name']), mode=0o775)
+
+    with open(join('../..', 'outdata', exp_conf['exp_name'], run_dir, 'experiment.json'), 'w') as file:
+        json.dump(exp_conf, file)
+
+    with open(join('../..', 'outdata', exp_conf['exp_name'], run_dir, exp_conf['model_name'], 'config.json'),
+              'w') as file:
+        json.dump(net_conf, file)
+
+    os.makedirs(join('../..', 'outdata', exp_conf['exp_name'], run_dir, 'scripts', 'starvoid'), mode=0o775)
+    os.makedirs(join('../..', 'outdata', exp_conf['exp_name'], run_dir, 'scripts', 'utils'), mode=0o775)
+
+    os.system('chmod -R 775 ' + '../../outdata/' + exp_conf['exp_name'])
 
 
 def start_experiment(exp_conf, net_conf, run_dir):
