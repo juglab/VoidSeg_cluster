@@ -325,13 +325,6 @@ def main():
                 'default': '5'
             },
             {
-                'type': 'confirm',
-                'message': 'use_denoising',
-                'name': 'use_denoising',
-                'default': False,
-                'filter': lambda val: int(val)
-            },
-            {
                 'type': 'list',
                 'name': 'scheme',
                 'message': 'scheme',
@@ -344,18 +337,17 @@ def main():
         config['unet_residual'] = False
         
         pwd = os.getcwd()
-        for p in config['train_frac']:
-            if config['is_seeding']:
-                for run_idx in [1,2,3,4,5,6,7,8]:
+        for run_idx in [1,2,3,4,5,6,7,8]:
+            for p in config['train_frac']:
+                if config['is_seeding']:
                     os.chdir(pwd)
                     run_name = config['exp_name']+'_run'+str(run_idx)
                     exp_conf, n2v_net, ini_net, seg_net = create_configs(config, run_name, seed=run_idx, train_frac=p)
-                    start_experiment(exp_conf, n2v_net, ini_net, seg_net, 'train_'+str(p))
-            else:
-                os.chdir(pwd)
-                exp_conf, n2v_net, ini_net, seg_net = create_configs(config, config['exp_name'], seed=config['random_seed'], train_frac=p)
+                else:
+                    os.chdir(pwd)
+                    exp_conf, n2v_net, ini_net, seg_net = create_configs(config, config['exp_name'], seed=config['random_seed'], train_frac=p)
 
-            start_experiment(exp_conf, n2v_net, ini_net, seg_net, 'train_'+str(p))
+                start_experiment(exp_conf, n2v_net, ini_net, seg_net, 'train_'+str(p))
 
 
 def create_configs(config, run_name, seed, train_frac):
@@ -383,7 +375,7 @@ def create_n2v_net_config(config):
     n2v_net = {
         'n_dim' : config['n_dim'],
         'axes' : config['axes'],
-        'use_denoising': config['use_denoising'],
+        'use_denoising': 1,
         'n2v_neighborhood_radius' : config['n2v_neighborhood_radius'],
         'n2v_manipulator' : config['n2v_manipulator'],
         'n2v_patch_shape' : config['n2v_patch_shape' ],
@@ -393,9 +385,9 @@ def create_n2v_net_config(config):
         'train_checkpoint' : config['train_checkpoint'],
         'train_tensorboard' : config['train_tensorboard'],
         'train_batch_size' : config[ 'train_batch_size'],
-        'n2v_train_learning_rate' : config['n2v_train_learning_rate'],
-        'n2v_train_steps_per_epoch' : config['n2v_train_steps_per_epoch'],
-        'n2v_train_epochs' : config['n2v_train_epochs'],
+        'train_learning_rate' : config['n2v_train_learning_rate'],
+        'train_steps_per_epoch' : config['n2v_train_steps_per_epoch'],
+        'train_epochs' : config['n2v_train_epochs'],
         'train_loss' : config['train_loss'],
         'unet_input_shape' : config['unet_input_shape'],
         'unet_last_activation' : config['unet_last_activation'],
@@ -404,8 +396,6 @@ def create_n2v_net_config(config):
         'unet_n_depth' : config['unet_n_depth'],
         'n_channel_out' : config['n_channel_out'],
         'n_channel_in' : config['n_channel_in']
-
-
     }
 
     return n2v_net
@@ -415,7 +405,7 @@ def create_ini_net_config(config):
     ini_net = {
         'n_dim' : config['n_dim'],
         'axes' : config['axes'],
-        'use_denoising': config['use_denoising'],
+        'use_denoising': 1,
         'n2v_neighborhood_radius' : config['n2v_neighborhood_radius'],
         'n2v_manipulator' : config['n2v_manipulator'],
         'n2v_patch_shape' : config['n2v_patch_shape' ],
@@ -425,9 +415,9 @@ def create_ini_net_config(config):
         'train_checkpoint' : config['train_checkpoint'],
         'train_tensorboard' : config['train_tensorboard'],
         'train_batch_size' : config[ 'train_batch_size'],
-        'ini_train_learning_rate' : config['ini_train_learning_rate'],
-        'ini_train_steps_per_epoch' : config['ini_train_steps_per_epoch'],
-        'ini_train_epochs' : config['ini_train_epochs'],
+        'train_learning_rate' : config['ini_train_learning_rate'],
+        'train_steps_per_epoch' : config['ini_train_steps_per_epoch'],
+        'train_epochs' : config['ini_train_epochs'],
         'train_loss' : config['train_loss'],
         'unet_input_shape' : config['unet_input_shape'],
         'unet_last_activation' : config['unet_last_activation'],
@@ -444,9 +434,9 @@ def create_seg_net_config(config):
     seg_net = {
         'n_dim': config['n_dim'],
         'axes': config['axes'],
-        'use_denoising': config['use_denoising'],
+        'use_denoising': 0,
         'n2v_neighborhood_radius': config['n2v_neighborhood_radius'],
-        'n2v_manipulator': config['n2v_manipulator'],
+        'n2v_manipulator': 'identity',
         'n2v_patch_shape': config['n2v_patch_shape'],
         'n2v_num_pix': config['n2v_num_pix'],
         'batch_norm': config['batch_norm'],
@@ -454,9 +444,9 @@ def create_seg_net_config(config):
         'train_checkpoint': config['train_checkpoint'],
         'train_tensorboard': config['train_tensorboard'],
         'train_batch_size': config['train_batch_size'],
-        'ini_train_learning_rate': config['ini_train_learning_rate'],
-        'ini_train_steps_per_epoch': config['ini_train_steps_per_epoch'],
-        'ini_train_epochs': config['ini_train_epochs'],
+        'train_learning_rate': config['seg_train_learning_rate'],
+        'train_steps_per_epoch': config['seg_train_steps_per_epoch'],
+        'train_epochs': config['seg_train_epochs'],
         'train_loss': config['train_loss'],
         'unet_input_shape': config['unet_input_shape'],
         'unet_last_activation': config['unet_last_activation'],
@@ -470,8 +460,10 @@ def create_seg_net_config(config):
 
 
 def copy_exp_conf(exp_conf, run_dir):
-    os.makedirs(join('..', '..', 'outdate', exp_conf['exp_name'] + exp_conf['scheme'], run_dir), mode=0o775)
-    with open(join('../..', 'outdata', exp_conf['exp_name'] + exp_conf['scheme'], run_dir, 'experiment.json'),
+    dir = join('..', '..', 'outdata', exp_conf['exp_name'] + exp_conf['scheme'], run_dir)
+    if not os.path.isdir(dir):
+        os.makedirs(dir, mode=0o775)
+    with open(join(dir, 'experiment.json'),
               'w') as file:
         json.dump(exp_conf, file)
 
@@ -522,36 +514,36 @@ def start_experiment(exp_conf, n2v_conf, ini_conf, seg_conf, run_dir):
         if(exp_conf['scheme'] == 'finetune_denoised_noisy'):
             copy_scripts(exp_conf, run_dir)
             copy_exp_conf(exp_conf, run_dir)
-            copy_net_conf(exp_conf, run_dir, ini_conf, '_init_model')
-            copy_net_conf(exp_conf, run_dir, seg_conf, '_seg_model')
+            copy_net_conf(exp_conf, run_dir, ini_conf, '_init')
+            copy_net_conf(exp_conf, run_dir, seg_conf, '_seg')
             create_outdir(exp_conf)
             run(exp_conf, run_dir)
         elif(exp_conf['scheme'] == 'finetune_denoised'):
             copy_scripts(exp_conf, run_dir)
             copy_exp_conf(exp_conf, run_dir)
-            copy_net_conf(exp_conf, run_dir, n2v_conf, '_denoise_model')
-            copy_net_conf(exp_conf, run_dir, ini_conf, '_init_model')
-            copy_net_conf(exp_conf, run_dir, seg_conf, '_seg_model')
+            copy_net_conf(exp_conf, run_dir, n2v_conf, '_denoise')
+            copy_net_conf(exp_conf, run_dir, ini_conf, '_init')
+            copy_net_conf(exp_conf, run_dir, seg_conf, '_seg')
             create_outdir(exp_conf)
             run(exp_conf, run_dir)
         elif(exp_conf['scheme'] == 'finetune'):
             copy_scripts(exp_conf, run_dir)
             copy_exp_conf(exp_conf, run_dir)
-            copy_net_conf(exp_conf, run_dir, ini_conf, '_init_model')
-            copy_net_conf(exp_conf, run_dir, seg_conf, '_seg_model')
+            copy_net_conf(exp_conf, run_dir, ini_conf, '_init')
+            copy_net_conf(exp_conf, run_dir, seg_conf, '_seg')
             create_outdir(exp_conf)
             run(exp_conf, run_dir)
         elif(exp_conf['scheme'] == 'sequential'):
             copy_scripts(exp_conf, run_dir)
             copy_exp_conf(exp_conf, run_dir)
-            copy_net_conf(exp_conf, run_dir, n2v_conf, '_denoise_model')
-            copy_net_conf(exp_conf, run_dir, seg_conf, '_seg_model')
+            copy_net_conf(exp_conf, run_dir, n2v_conf, '_denoise')
+            copy_net_conf(exp_conf, run_dir, seg_conf, '_seg')
             create_outdir(exp_conf)
             run(exp_conf, run_dir)
         elif(exp_conf['scheme'] == 'baseline'):
             copy_scripts(exp_conf, run_dir)
             copy_exp_conf(exp_conf, run_dir)
-            copy_net_conf(exp_conf, run_dir, seg_conf, '_seg_model')
+            copy_net_conf(exp_conf, run_dir, seg_conf, '_seg')
             create_outdir(exp_conf)
             run(exp_conf, run_dir)
         else:
@@ -566,7 +558,7 @@ def run(exp_conf, run_dir):
     print('Current directory:', os.getcwd())
     cmd = "sbatch --exclude=r02n01 -p gpu --gres=gpu:1 --mem-per-cpu 256000 -t 48:00:00 --export=ALL -J StarVoid -o "+log_file+" scripts/starvoid/start_job_starvoid_clean.sh"
     print(cmd)
-    os.system(cmd)
+    # os.system(cmd)
 
 
 if __name__ == "__main__":
