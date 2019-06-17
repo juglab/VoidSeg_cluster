@@ -44,7 +44,7 @@ class TrainFracValidator(Validator):
         for v in values:
             try:
                 float_v = float(v)
-                if float_v < 0 or float_v > 100:
+                if float_v > 100:
                     raise ValidationError(
                         message='Enter a comma separated list of floats between 0 and 100.',
                         cursor_position=len(document.text)
@@ -54,10 +54,10 @@ class TrainFracValidator(Validator):
                     message='Enter a list of floats between 0 and 100.',
                     cursor_position=len(document.text)
                 )
-                
+
 
 def main():
-    parser = ap.ArgumentParser(description="Noise2Void cluster job setup script.")
+    parser = ap.ArgumentParser(description="Finetuning cluster job setup script.")
     parser.add_argument("--exp")
     parser.add_argument("--net")
     args, leftovers = parser.parse_known_args()
@@ -113,7 +113,7 @@ def main():
                 'type': 'input',
                 'name': 'train_frac',
                 'message': 'Training data fractions in x%:',
-                'default': '0.25,0.5,1.0,2.0,4.0,8.0,16.0,32.0,64.0,100.0',
+                'default': '1,2,3,5,10,20,30,40,50,60,70,80,90,100',
                 'validate': TrainFracValidator,
                 'filter': lambda val: [float(x) for x in val.split(',')]
             },
@@ -188,7 +188,7 @@ def main():
                 'type': 'input',
                 'name': 'train_epochs',
                 'message': 'train_epochs',
-                'default': '100',
+                'default': '200',
                 'validate': lambda val: int(val) > 0,
                 'filter': lambda val: int(val)
             },
@@ -268,7 +268,7 @@ def main():
                 'type': 'list',
                 'name': 'n2v_manipulator',
                 'message': 'n2v_manipulator',
-                'choices': ['uniform_withCP', 'normal_withoutCP', 'normal_additive', 'normal_fitted', 'identity']
+                'choices': ['uniform_withCP', 'identity', 'normal_withoutCP', 'normal_additive', 'normal_fitted']
             },
             {
                 'type': 'input',
@@ -280,62 +280,47 @@ def main():
                 'type': 'confirm',
                 'message': 'use_denoising',
                 'name': 'use_denoising',
-                'default': True,
+                'default': False,
                 'filter': lambda val: int(val)
+            },
+            {
+                'type': 'list',
+                'name': 'scheme',
+                'message': 'scheme',
+                'choices': ['baseline', 'sequential', 'finetune', 'finetune_denoised', 'finetune_denoised_noisy']
             }
         ]
 
         config = prompt(questions)
         config['probabilistic'] = False
         config['unet_residual'] = False
+        
         pwd = os.getcwd()
         for p in config['train_frac']:
-            if config['is_seeding']:
-                for run_idx in [1,2,3,4,5,6,7,8]:
-                    os.chdir(pwd)
-                    run_name = config['exp_name']+'_run'+str(run_idx)
-                    exp_conf = {
-                        'exp_name' : run_name,
-                        'train_path': config['train_path'],
-                        'test_path': config['test_path'],
-                        'is_seeding': config['is_seeding'],
-                        'random_seed': run_idx,
-                        'augment': config['augment'],
-                        'train_frac': p,
-                        'base_dir': join('../..', run_name, 'train_'+str(p)),
-                        'model_name': config['exp_name'].split('_')[0] + '_model'
-                    }
+            os.chdir(pwd)
+            exp_conf = {
+                'exp_name' : config['exp_name'],
+                'scheme' : config['scheme'],
+                'train_path': config['train_path'],
+                'test_path': config['test_path'],
+                'is_seeding': config['is_seeding'],
+                'random_seed': config['random_seed'],
+                'augment': config['augment'],
+                'train_frac': p,
+                'base_dir': join('../..', config['exp_name']+config['scheme'], 'train_'+str(p)),
+                'model_name': config['exp_name'].split('_')[0] + '_model'
+            }
 
-                    net_conf = {}
-                    for k in config.keys():
-                        if k not in exp_conf.keys():
-                            net_conf[k] = config[k]
+            net_conf = {}
+            for k in config.keys():
+                if k not in exp_conf.keys():
+                    net_conf[k] = config[k]
 
-                    start_experiment(exp_conf, net_conf, 'train_'+str(p))
-            else:
-                os.chdir(pwd)
-                exp_conf = {
-                    'exp_name': config['exp_name'],
-                    'train_path': config['train_path'],
-                    'test_path': config['test_path'],
-                    'is_seeding': config['is_seeding'],
-                    'random_seed': config['random_seed'],
-                    'augment': config['augment'],
-                    'train_frac': p,
-                    'base_dir': join('../..', config['exp_name'], 'train_' + str(p)),
-                    'model_name': config['exp_name'].split('_')[0] + '_model'
-                }
-
-                net_conf = {}
-                for k in config.keys():
-                    if k not in exp_conf.keys():
-                        net_conf[k] = config[k]
-
-                start_experiment(exp_conf, net_conf, 'train_' + str(p))
+            start_experiment(exp_conf, net_conf, 'train_'+str(p))
 
 
 def start_experiment(exp_conf, net_conf, run_dir):
-    if isdir(join('../..', 'outdata', exp_conf['exp_name'], run_dir, exp_conf['model_name'])):
+    if isdir(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'], run_dir, exp_conf['model_name'])):
         confirmation = prompt([
             {
                 'type': 'confirm',
@@ -349,35 +334,167 @@ def start_experiment(exp_conf, net_conf, run_dir):
         else:
             print('Abort')
     else:
-        os.makedirs(join('../..', 'outdata', exp_conf['exp_name'],run_dir, exp_conf['model_name']), mode=0o775)
+        
+        if(exp_conf['scheme'] == 'finetune_denoised_noisy'):
+    
+            net_conf_n2v_init_model = dict(net_conf)
+            net_conf_seg_model = dict(net_conf)
+            
+            net_conf_n2v_init_model["use_denoising"] = 1
+            net_conf_seg_model["use_denoising"] = 0
+            
+            net_conf_seg_model["n2v_manipulator"] = 'identity'
+            
+            os.makedirs(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, exp_conf['model_name']+str('_n2v_init_model')), mode=0o775)
+            os.makedirs(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, exp_conf['model_name']+str('_seg_model')), mode=0o775)
+       
+            with open(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, 'experiment.json'), 'w') as file:
+                json.dump(exp_conf, file)
+            
+            with open(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, exp_conf['model_name']+str('_n2v_init_model'),  'config.json'), 'w') as file:
+                json.dump(net_conf_n2v_init_model, file)
+            
+            with open(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, exp_conf['model_name']+str('_seg_model'),  'config.json'), 'w') as file:
+                json.dump(net_conf_seg_model, file)
 
-        with open(join('../..', 'outdata', exp_conf['exp_name'],run_dir, 'experiment.json'), 'w') as file:
-            json.dump(exp_conf, file)
+            os.makedirs(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'], run_dir,'scripts', 'starvoid'), mode=0o775)
+            os.makedirs(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'], run_dir,'scripts', 'utils'), mode=0o775)
 
-        with open(join('../..', 'outdata', exp_conf['exp_name'],run_dir, exp_conf['model_name'],  'config.json'), 'w') as file:
-            json.dump(net_conf, file)
+            os.system('chmod -R 775 '+'../../outdata/'+exp_conf['exp_name']+exp_conf['scheme'])
 
-        os.makedirs(join('../..', 'outdata', exp_conf['exp_name'], run_dir,'scripts', 'starvoid'), mode=0o775)
-        os.makedirs(join('../..', 'outdata', exp_conf['exp_name'], run_dir,'scripts', 'utils'), mode=0o775)
+            run(exp_conf, net_conf, run_dir)
+        
+        if(exp_conf['scheme'] == 'finetune_denoised'):
+            net_conf_denoise_model = dict(net_conf)
+            net_conf_n2v_init_model = dict(net_conf)
+            net_conf_seg_model = dict(net_conf)
+            
+            net_conf_denoise_model["use_denoising"] = 1
+            net_conf_n2v_init_model["use_denoising"] = 1
+            net_conf_seg_model["use_denoising"] = 0
+            
+            net_conf_seg_model["n2v_manipulator"] = 'identity'
+            
+            os.makedirs(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, exp_conf['model_name']+str('_denoise_model')), mode=0o775)
+            os.makedirs(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, exp_conf['model_name']+str('_n2v_init_model')), mode=0o775)
+            os.makedirs(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, exp_conf['model_name']+str('_seg_model')), mode=0o775)
+       
+            with open(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, 'experiment.json'), 'w') as file:
+                json.dump(exp_conf, file)
+            
+            with open(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, exp_conf['model_name']+str('_denoise_model'),  'config.json'), 'w') as file:
+                json.dump(net_conf_denoise_model, file)
+            
+            with open(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, exp_conf['model_name']+str('_n2v_init_model'),  'config.json'), 'w') as file:
+                json.dump(net_conf_n2v_init_model, file)
+            
+            with open(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, exp_conf['model_name']+str('_seg_model'),  'config.json'), 'w') as file:
+                json.dump(net_conf_seg_model, file)
 
-        os.system('chmod -R 775 '+'../../outdata/'+exp_conf['exp_name'])
+            os.makedirs(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'], run_dir,'scripts', 'starvoid'), mode=0o775)
+            os.makedirs(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'], run_dir,'scripts', 'utils'), mode=0o775)
 
-        run(exp_conf, net_conf, run_dir)
+            os.system('chmod -R 775 '+'../../outdata/'+exp_conf['exp_name']+exp_conf['scheme'])
+
+            run(exp_conf, net_conf, run_dir)
+            
+        if(exp_conf['scheme'] == 'finetune'):
+
+            net_conf_n2v_init_model = dict(net_conf)
+            net_conf_seg_model = dict(net_conf)
+            
+            net_conf_n2v_init_model["use_denoising"] = 1
+            net_conf_seg_model["use_denoising"] = 0
+            
+            net_conf_seg_model["n2v_manipulator"] = 'identity'
+            
+            os.makedirs(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, exp_conf['model_name']+str('_n2v_init_model')), mode=0o775)
+            os.makedirs(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, exp_conf['model_name']+str('_seg_model')), mode=0o775)
+       
+            with open(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, 'experiment.json'), 'w') as file:
+                json.dump(exp_conf, file)
+            
+            with open(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, exp_conf['model_name']+str('_n2v_init_model'),  'config.json'), 'w') as file:
+                json.dump(net_conf_n2v_init_model, file)
+            
+            with open(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, exp_conf['model_name']+str('_seg_model'),  'config.json'), 'w') as file:
+                json.dump(net_conf_seg_model, file)
+
+            os.makedirs(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'], run_dir,'scripts', 'starvoid'), mode=0o775)
+            os.makedirs(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'], run_dir,'scripts', 'utils'), mode=0o775)
+
+            os.system('chmod -R 775 '+'../../outdata/'+exp_conf['exp_name']+exp_conf['scheme'])
+
+            run(exp_conf, net_conf, run_dir)
+            
+        if(exp_conf['scheme'] == 'sequential'):
+
+            net_conf_denoise_model = dict(net_conf)
+            net_conf_seg_model = dict(net_conf)
+            
+            net_conf_denoise_model["use_denoising"] = 1
+            net_conf_seg_model["use_denoising"] = 0
+            
+            net_conf_seg_model["n2v_manipulator"] = 'identity'
+            
+            os.makedirs(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, exp_conf['model_name']+str('_denoise_model')), mode=0o775)
+            os.makedirs(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, exp_conf['model_name']+str('_seg_model')), mode=0o775)
+       
+            with open(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, 'experiment.json'), 'w') as file:
+                json.dump(exp_conf, file)
+            
+            with open(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, exp_conf['model_name']+str('_denoise_model'),  'config.json'), 'w') as file:
+                json.dump(net_conf_denoise_model, file)
+            
+            with open(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, exp_conf['model_name']+str('_seg_model'),  'config.json'), 'w') as file:
+                json.dump(net_conf_seg_model, file)
+
+            os.makedirs(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'], run_dir,'scripts', 'starvoid'), mode=0o775)
+            os.makedirs(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'], run_dir,'scripts', 'utils'), mode=0o775)
+
+            os.system('chmod -R 775 '+'../../outdata/'+exp_conf['exp_name']+exp_conf['scheme'])
+
+            run(exp_conf, net_conf, run_dir)
+            
+        if(exp_conf['scheme'] == 'baseline'):
+
+            net_conf_seg_model = dict(net_conf)
+    
+            net_conf_seg_model["use_denoising"] = 0
+            
+            net_conf_seg_model["n2v_manipulator"] = 'identity'
+            
+            os.makedirs(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, exp_conf['model_name']+str('_seg_model')), mode=0o775)
+       
+            with open(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, 'experiment.json'), 'w') as file:
+                json.dump(exp_conf, file)
+            
+            with open(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, exp_conf['model_name']+str('_seg_model'),  'config.json'), 'w') as file:
+                json.dump(net_conf_seg_model, file)
+
+            os.makedirs(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'], run_dir,'scripts', 'starvoid'), mode=0o775)
+            os.makedirs(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'], run_dir,'scripts', 'utils'), mode=0o775)
+
+            os.system('chmod -R 775 '+'../../outdata/'+exp_conf['exp_name']+exp_conf['scheme'])
+
+            run(exp_conf, net_conf, run_dir)
+        
 
 
 def run(exp_conf, net_conf, run_dir):
     for f in glob.glob(join('scripts', 'starvoid', '*')):
-        cp(f, join('../..', 'outdata', exp_conf['exp_name'], run_dir,'scripts', 'starvoid', basename(f)))
+        cp(f, join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'], run_dir,'scripts', 'starvoid', basename(f)))
 
     for f in glob.glob(join('scripts', 'utils', '*')):
-        cp(f, join('../..', 'outdata', exp_conf['exp_name'], run_dir,'scripts', 'utils', basename(f)))
+        print(f)
+        cp(f, join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'], run_dir,'scripts', 'utils', basename(f)))
 
     log_file = 'experiment.log'
 
 
-    os.chdir(join('../..', 'outdata', exp_conf['exp_name'], run_dir))
+    os.chdir(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'], run_dir))
     print('Current directory:', os.getcwd())
-    cmd = "sbatch --exclude=r02n01 -p gpu --gres=gpu:1 --mem-per-cpu 256000 -t 48:00:00 --export=ALL -J StarVoid -o "+log_file+" scripts/starvoid/start_job.sh"
+    cmd = "sbatch --exclude=r02n01 -p gpu --gres=gpu:1 --mem-per-cpu 256000 -t 48:00:00 --export=ALL -J StarVoid -o "+log_file+" scripts/starvoid/start_job_starvoid_clean.sh"
     print(cmd)
     os.system(cmd)
 
