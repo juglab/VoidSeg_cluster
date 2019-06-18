@@ -51,6 +51,7 @@ class Scheme():
 
     def preprocess(self, model, train_data, val_data, test_data):
         assert False, 'Implementation Missing.'
+        return None, None
 
     def train_denoise(self, model, train_data, val_data):
         assert False, 'Implementation Missing.'
@@ -107,8 +108,8 @@ class Scheme():
             io.imsave(join(self.exp_conf['base_dir'], 'border' + str(i).zfill(3) + '.tif'), prediction_b)
 
     def create_n2v_train_data(self, train_data_x, train_data_y, n2v_trainval_data):
-        X_train = train_x
-        Y_train = train_y
+        X_train = train_data_x
+        Y_train = train_data_y
         X_val = n2v_trainval_data['X_val']
         Y_val = n2v_trainval_data['Y_val']
 
@@ -135,7 +136,7 @@ class Scheme():
 
     def load_n2v_train_test_data(self):
         assert False, 'Implementation Missing.'
-        return None
+        return None, None
 
     def load_seg_train_data(self):
         assert False, 'Implementation Missing.'
