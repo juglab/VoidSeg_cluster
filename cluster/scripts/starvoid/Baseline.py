@@ -7,19 +7,27 @@ import pickle
 
 class Baseline(Scheme.Scheme):
 
-    def load_n2v_train_data(self):
-        # Nothing to do
-        return None
-
-    def create_n2v_train_data(self, train_data):
+    def load_n2v_train_test_data(self):
         # Nothing to do
         return None, None
+
+    def create_n2v_train_data(self, train_data_x, train_data_y, n2v_train_data):
+        # Nothing to do
+        return None, None, None
 
     def load_n2v_model(self):
         # Nothing to do
         return None
 
     def preprocess(self, model, train_data, val_data):
+        # Noting to do
+        return None, None
+    
+    def train_denoise(self, model, train_data, val_data):
+        # Noting to do
+        pass
+        
+    def predict_denoise(self, model, test_data):
         # Noting to do
         pass
 
