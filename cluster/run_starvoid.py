@@ -360,7 +360,7 @@ def create_configs(config, run_name, seed, train_frac):
         'random_seed': seed,
         'augment': config['augment'],
         'train_frac': train_frac,
-        'base_dir': join('../..', config['exp_name']+config['scheme'], 'train_'+str(train_frac)),
+        'base_dir': join('../..', run_name+config['scheme'], 'train_'+str(train_frac)),
         'model_name': config['exp_name'].split('_')[0] + '_model'
     }
 
@@ -395,7 +395,8 @@ def create_n2v_net_config(config):
         'unet_kern_size' : config['unet_kern_size'],
         'unet_n_depth' : config['unet_n_depth'],
         'n_channel_out' : config['n_channel_out'],
-        'n_channel_in' : config['n_channel_in']
+        'n_channel_in' : config['n_channel_in'],
+        'train_scheme' : config['train_scheme']
     }
 
     return n2v_net
@@ -425,7 +426,8 @@ def create_ini_net_config(config):
         'unet_kern_size' : config['unet_kern_size'],
         'unet_n_depth' : config['unet_n_depth'],
         'n_channel_out' : config['n_channel_out'],
-        'n_channel_in' : config['n_channel_in']
+        'n_channel_in' : config['n_channel_in'],
+        'train_scheme' : config['train_scheme']
     }
     return ini_net
 
@@ -455,6 +457,7 @@ def create_seg_net_config(config):
         'unet_n_depth': config['unet_n_depth'],
         'n_channel_out': config['n_channel_out'],
         'n_channel_in': config['n_channel_in'],
+        'train_scheme' : config['train_scheme']
     }
     return seg_net
 
@@ -558,7 +561,7 @@ def run(exp_conf, run_dir):
     print('Current directory:', os.getcwd())
     cmd = "sbatch --exclude=r02n01 -p gpu --gres=gpu:1 --mem-per-cpu 256000 -t 48:00:00 --export=ALL -J StarVoid -o "+log_file+" scripts/starvoid/start_job_starvoid_clean.sh"
     print(cmd)
-    # os.system(cmd)
+    os.system(cmd)
 
 
 if __name__ == "__main__":

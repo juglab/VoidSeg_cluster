@@ -10,6 +10,7 @@ from trainseg import TrainSeg
 from predictn2v import PredictN2V
 from predictseg import PredictSeg
 from sklearn.feature_extraction import image
+from Baseline import Baseline
 
 with open('experiment.json', 'r') as f:
     exp_params = json.load(f)
@@ -280,21 +281,5 @@ if(exp_params['scheme'] == 'sequential'):
     
     
 if(exp_params['scheme'] == 'baseline'): 
-    
-    with open(exp_params['model_name']+str('_seg_model')+ '/config.json', 'r') as f:
-        seg_conf = json.load(f)
-        
-    seg_obj = TrainSeg(seg_conf, exp_params, load_weights = False)
-    seg_train_files = np.load(exp_params['train_path']) 
-    seg_X_train = seg_train_files['X_train']
-    seg_Y_train = seg_train_files['Y_train']
-    seg_X_val = seg_train_files['X_val'].astype(np.float32)
-    seg_Y_val = seg_train_files['Y_val'].astype(np.float32)
-    seg_obj.prepare_data_and_segment(seg_X_train, seg_Y_train, seg_X_val, seg_Y_val)
-    
-    import compute_seg_threshold
-    
-    files = np.load(exp_params["test_path"])
-    X_test = files['X_test']
-    seg_pred = PredictSeg(exp_params)
-    seg_pred.predict(X_test, seg_X_train, '_seg_model')
+    baseline = Baseline()
+    baseline.compute()

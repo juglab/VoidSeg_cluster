@@ -1,8 +1,7 @@
-from csbdeep.models import Config, CARE
+from csbdeep.models import CARE
 import numpy as np
 from csbdeep.utils.n2v_utils import manipulate_val_data
 from skimage.segmentation import find_boundaries
-import json
 from os.path import join
 import pickle
 from train_utils import augment_data
@@ -26,7 +25,6 @@ class TrainN2V:
 
     def onehot_encoding(self, lbl, n_classes=3, dtype=np.uint32):
         """ n_classes will be determined by max lbl value if its value is None """
-        from keras.utils import to_categorical
         onehot = np.zeros((*lbl.shape, n_classes), dtype=dtype)
         for i in range(n_classes):
             onehot[lbl == i, ..., i] = 1
