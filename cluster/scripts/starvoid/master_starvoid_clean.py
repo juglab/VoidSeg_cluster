@@ -11,6 +11,7 @@ from predictn2v import PredictN2V
 from predictseg import PredictSeg
 from sklearn.feature_extraction import image
 from Baseline import Baseline
+from Sequential import Sequential
 
 with open('experiment.json', 'r') as f:
     exp_params = json.load(f)

@@ -19,7 +19,7 @@ class Baseline(Scheme.Scheme):
         # Nothing to do
         return None
 
-    def preprocess(self, model, train_data, val_data):
+    def preprocess_n2v(self, train_data, test_data):
         # Noting to do
         return None, None
     
@@ -31,16 +31,17 @@ class Baseline(Scheme.Scheme):
         # Noting to do
         pass
 
-    def load_seg_train_data(self):
-        data = np.load(self.exp_conf['train_path'])
-        return data
+    def load_seg_train_test_data(self):
+        train_data = np.load(self.exp_conf['train_path'])
+        test_data = np.load(self.exp_conf['test_path'])
+        return train_data, test_data
+
+    def preprocess_seg(self, n2v_model, seg_train_data, seg_test_data, mean_std_denoise):
+        return np.load(self.exp_conf['train_path']), np.load(self.exp_conf['test_path'])
 
     def load_seg_model(self):
         model = CARE(None, name=self.exp_conf['model_name']+'_seg', basedir=self.exp_conf['base_dir'])
         return model
-
-    def load_seg_test_data(self):
-        return np.load(self.exp_conf['test_path'])
 
     def train_seg(self, model, train, val):
         hist = model.train(train[0], train[1], validation_data=val)
