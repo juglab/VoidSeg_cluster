@@ -1,5 +1,6 @@
 import numpy as np
 from skimage.segmentation import find_boundaries
+from sklearn.feature_extraction import image
 
 def augment_data(X_train, Y_train):
     
@@ -49,3 +50,9 @@ def onehot_encoding(lbl, n_classes=3, dtype=np.uint32):
     for i in range(n_classes):
         onehot[lbl == i, ..., i] = 1
     return onehot
+
+def create_patches(images, masks, size):
+    patchesimages = image.extract_patches_2d(images, (size, size), 10, 0)
+    patchesmasks = image.extract_patches_2d(masks, (size, size), 10, 0)
+
+    return patchesimages, patchesmasks
