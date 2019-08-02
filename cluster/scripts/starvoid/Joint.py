@@ -5,7 +5,7 @@ from os.path import join
 import pickle
 
 
-class Baseline(Scheme.Scheme):
+class Joint(Scheme.Scheme):
 
     def load_n2v_train_test_data(self):
         # Nothing to do
@@ -22,11 +22,11 @@ class Baseline(Scheme.Scheme):
     def preprocess_n2v(self, train_data, test_data):
         # Noting to do
         return None, None
-    
+
     def train_denoise(self, model, train_data, val_data):
         # Noting to do
         pass
-        
+
     def predict_denoise(self, model, test_data):
         # Noting to do
         pass
@@ -40,16 +40,15 @@ class Baseline(Scheme.Scheme):
         return np.load(self.exp_conf['train_path']), np.load(self.exp_conf['test_path'])
 
     def load_seg_model(self):
-        model = CARE(None, name=self.exp_conf['model_name']+'_seg', basedir=self.exp_conf['base_dir'])
-        # model.load_weights(
-        #     '/lustre/projects/juglab/StarVoid/outdata/finN2V_dsb_n40_run1sequential/train_100.0/finN2V_model_denoise/weights_best.h5')
+        model = CARE(None, name=self.exp_conf['model_name'] + '_seg', basedir=self.exp_conf['base_dir'])
         return model
 
     def train_seg(self, model, train, val):
         hist = model.train(train[0], train[1], validation_data=val)
 
-        with open(join(self.exp_conf['base_dir'], self.exp_conf['model_name']+str('_seg'), 'history_' + self.exp_conf['model_name'] + str('_seg')+'.dat'),
+        with open(join(self.exp_conf['base_dir'], self.exp_conf['model_name'] + str('_seg'),
+                       'history_' + self.exp_conf['model_name'] + str('_seg') + '.dat'),
                   'wb') as file_pi:
-              pickle.dump(hist.history, file_pi)
+            pickle.dump(hist.history, file_pi)
 
 

@@ -59,6 +59,8 @@ class Sequential(Scheme.Scheme):
         seg_train_data['Y_val'] = n2v_train_data['Y_val']
         seg_test_data = {}
         seg_test_data['X_test'] = clean_test
+        np.savez_compressed(self.exp_conf['base_dir'] + "/fin_TrainVal.npz", X_train=clean_train, Y_train=n2v_train_data['Y_train'], X_val=clean_val, Y_val=n2v_train_data['Y_val'])
+        np.savez_compressed(self.exp_conf['base_dir'] + "/fin_Test.npz", X_test=clean_test)
         return seg_train_data, seg_test_data
         
     def train_denoise(self, model, train, val):

@@ -15,6 +15,13 @@ def intersection_over_union(psg):
     csum = np.sum(psg, 1, keepdims=True)
     return psg / (rsum + csum - psg)
 
+def matching_iou(psg, fraction=0.5):
+  iou = intersection_over_union(psg)
+  matching = iou > 0.5
+  matching[:,0] = False
+  matching[0,:] = False
+  return matching
+
 def matching_overlap(psg, fractions=(0.5,0.5)):
     """
     create a matching given pixel_sharing_bipartite of two label images based on mutually overlapping regions of sufficient size.
@@ -31,6 +38,23 @@ def matching_overlap(psg, fractions=(0.5,0.5)):
     matching = m0 * m1
     matching = matching.astype('bool')
     return matching
+
+def precision(lab_gt, lab, iou=0.5, partial_dataset=False):
+  """
+  precision = TP / (TP + FP + FN) i.e. "intersection over union" for a graph matching
+  """
+  psg = pixel_sharing_bipartite(lab_gt, lab)
+  matching = matching_iou(psg, fraction=iou)
+  assert matching.sum(0).max() < 2
+  assert matching.sum(1).max() < 2
+  n_gt  = len(set(np.unique(lab_gt)) - {0})
+  n_hyp = len(set(np.unique(lab)) - {0})
+  n_matched = matching.sum()
+  if partial_dataset:
+    return n_matched , (n_gt + n_hyp - n_matched)
+  else:
+    return n_matched / (n_gt + n_hyp - n_matched)
+
 
 def seg(lab_gt, lab, partial_dataset=False):
     """

@@ -188,7 +188,7 @@ def main():
                 'type': 'input',
                 'name': 'train_epochs',
                 'message': 'train_epochs',
-                'default': '100',
+                'default': '200',
                 'validate': lambda val: int(val) > 0,
                 'filter': lambda val: int(val)
             },
@@ -282,6 +282,12 @@ def main():
                 'name': 'use_denoising',
                 'default': True,
                 'filter': lambda val: int(val)
+            },
+            {
+                'type': 'list',
+                'name': 'scheme',
+                'message': 'scheme',
+                'choices': ['random', 'finetune_first', 'finetune_second', 'finetune_both']
             }
         ]
 
@@ -289,20 +295,23 @@ def main():
         config['probabilistic'] = False
         config['unet_residual'] = False
         pwd = os.getcwd()
-        for p in config['train_frac']:
-            if config['is_seeding']:
-                for run_idx in [1,2,3,4,5,6,7,8]:
+
+        for run_idx in [1,2,3,4,5,6,7,8]:
+            for p in config['train_frac']:
+                if config['is_seeding']:
+
                     os.chdir(pwd)
                     run_name = config['exp_name']+'_run'+str(run_idx)
                     exp_conf = {
                         'exp_name' : run_name,
+                        'scheme': config['scheme'],
                         'train_path': config['train_path'],
                         'test_path': config['test_path'],
                         'is_seeding': config['is_seeding'],
                         'random_seed': run_idx,
                         'augment': config['augment'],
                         'train_frac': p,
-                        'base_dir': join('../..', run_name, 'train_'+str(p)),
+                        'base_dir': join('../..', run_name+config['scheme'], 'train_'+str(p)),
                         'model_name': config['exp_name'].split('_')[0] + '_model'
                     }
 
@@ -312,30 +321,32 @@ def main():
                             net_conf[k] = config[k]
 
                     start_experiment(exp_conf, net_conf, 'train_'+str(p))
-            else:
-                os.chdir(pwd)
-                exp_conf = {
-                    'exp_name': config['exp_name'],
-                    'train_path': config['train_path'],
-                    'test_path': config['test_path'],
-                    'is_seeding': config['is_seeding'],
-                    'random_seed': config['random_seed'],
-                    'augment': config['augment'],
-                    'train_frac': p,
-                    'base_dir': join('../..', config['exp_name'], 'train_' + str(p)),
-                    'model_name': config['exp_name'].split('_')[0] + '_model'
+                else:
+                    os.chdir(pwd)
+                    exp_conf = {
+                        'exp_name': config['exp_name'],
+                        'scheme': config['scheme'],
+                        'train_path': config['train_path'],
+                        'test_path': config['test_path'],
+                        'is_seeding': config['is_seeding'],
+                        'random_seed': config['random_seed'],
+                        'augment': config['augment'],
+                        'train_frac': p,
+                        'base_dir': join('../..', config['exp_name']+exp_conf['scheme'], 'train_' + str(p)),
+                        'model_name': config['exp_name'].split('_')[0] + '_model'
                 }
 
-                net_conf = {}
-                for k in config.keys():
-                    if k not in exp_conf.keys():
-                        net_conf[k] = config[k]
+                    net_conf = {}
+                    for k in config.keys():
+                        if k not in exp_conf.keys():
+                            net_conf[k] = config[k]
 
-                start_experiment(exp_conf, net_conf, 'train_' + str(p))
+                    start_experiment(exp_conf, net_conf, 'train_' + str(p))
+
 
 
 def start_experiment(exp_conf, net_conf, run_dir):
-    if isdir(join('../..', 'outdata', exp_conf['exp_name'], run_dir, exp_conf['model_name'])):
+    if isdir(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'], run_dir, exp_conf['model_name'])):
         confirmation = prompt([
             {
                 'type': 'confirm',
@@ -349,33 +360,33 @@ def start_experiment(exp_conf, net_conf, run_dir):
         else:
             print('Abort')
     else:
-        os.makedirs(join('../..', 'outdata', exp_conf['exp_name'],run_dir, exp_conf['model_name']), mode=0o775)
+        os.makedirs(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, exp_conf['model_name']), mode=0o775)
 
-        with open(join('../..', 'outdata', exp_conf['exp_name'],run_dir, 'experiment.json'), 'w') as file:
+        with open(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, 'experiment.json'), 'w') as file:
             json.dump(exp_conf, file)
 
-        with open(join('../..', 'outdata', exp_conf['exp_name'],run_dir, exp_conf['model_name'],  'config.json'), 'w') as file:
+        with open(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'],run_dir, exp_conf['model_name'],  'config.json'), 'w') as file:
             json.dump(net_conf, file)
 
-        os.makedirs(join('../..', 'outdata', exp_conf['exp_name'], run_dir,'scripts', 'seqUNet'), mode=0o775)
-        os.makedirs(join('../..', 'outdata', exp_conf['exp_name'], run_dir,'scripts', 'utils'), mode=0o775)
+        os.makedirs(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'], run_dir,'scripts', 'seqUNet'), mode=0o775)
+        os.makedirs(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'], run_dir,'scripts', 'utils'), mode=0o775)
 
-        os.system('chmod -R 775 '+'../../outdata/'+exp_conf['exp_name'])
+        os.system('chmod -R 775 '+'../../outdata/'+exp_conf['exp_name']+exp_conf['scheme'])
 
         run(exp_conf, net_conf, run_dir)
 
 
 def run(exp_conf, net_conf, run_dir):
     for f in glob.glob(join('scripts', 'seqUNet', '*')):
-        cp(f, join('../..', 'outdata', exp_conf['exp_name'], run_dir,'scripts', 'seqUNet', basename(f)))
+        cp(f, join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'], run_dir,'scripts', 'seqUNet', basename(f)))
 
     for f in glob.glob(join('scripts', 'utils', '*')):
-        cp(f, join('../..', 'outdata', exp_conf['exp_name'], run_dir,'scripts', 'utils', basename(f)))
+        cp(f, join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'], run_dir,'scripts', 'utils', basename(f)))
 
-    log_file = 'experiment_part2.log'
+    log_file = 'experiment.log'
 
 
-    os.chdir(join('../..', 'outdata', exp_conf['exp_name'], run_dir))
+    os.chdir(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'], run_dir))
     print('Current directory:', os.getcwd())
     cmd = "sbatch --exclude=r02n01 -p gpu --gres=gpu:1 --mem-per-cpu 128000 -t 24:00:00 --export=ALL -J seqUNet -o "+log_file+" scripts/seqUNet/start_job.sh"
     print(cmd)

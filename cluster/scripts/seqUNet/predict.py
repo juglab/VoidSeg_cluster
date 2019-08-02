@@ -47,18 +47,18 @@ class CARE_SEQ(CARE):
                               activation="relu", dropout=False, batch_norm=True,
                               n_conv_per_depth=2, pool=(2,2), prefix='n2v')(input)
 
-            final_n2v = conv(1, (1,)*n_dim, activation='linear')(unet)
+            # final_n2v = conv(1, (1,)*n_dim, activation='linear')(unet)
 
             unet_seg = unet_block(2, 32, (3,3),
                               activation="relu", dropout=False, batch_norm=True,
                               n_conv_per_depth=2, pool=(2,2), prefix='seg')(unet)
 
-            final_seg = conv(3, (1,)*n_dim, activation='linear')(unet_seg)
+            final_seg = conv(4, (1,)*n_dim, activation='linear')(unet_seg) # Chnaged output dimensions
 
-            final_n2v = Activation(activation=last_activation)(final_n2v)
-            final_seg = Activation(activation=last_activation)(final_seg)
+            # final_n2v = Activation(activation=last_activation)(final_n2v)
+            final = Activation(activation=last_activation)(final_seg)
 
-            final = Concatenate(axis=channel_axis)([final_n2v, final_seg])
+            # final = Concatenate(axis=channel_axis)([final_n2v, final_seg])
             return Model(inputs=input, outputs=final)
         return seq_unet((None, None, 1), 'linear')
 

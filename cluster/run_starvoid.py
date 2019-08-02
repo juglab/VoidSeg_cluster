@@ -328,7 +328,7 @@ def main():
                 'type': 'list',
                 'name': 'scheme',
                 'message': 'scheme',
-                'choices': ['baseline', 'sequential', 'finetune', 'finetune_denoised', 'finetune_denoised_noisy']
+                'choices': ['baseline', 'sequential', 'finetune', 'finetune_denoised', 'finetune_denoised_noisy', 'joint']
             }
         ]
 
@@ -342,12 +342,12 @@ def main():
                 if config['is_seeding']:
                     os.chdir(pwd)
                     run_name = config['exp_name']+'_run'+str(run_idx)
-                    exp_conf, n2v_net, ini_net, seg_net = create_configs(config, run_name, seed=run_idx, train_frac=p)
+                    exp_conf, n2v_net, ini_net, seg_net, joint_net = create_configs(config, run_name, seed=run_idx, train_frac=p)
                 else:
                     os.chdir(pwd)
-                    exp_conf, n2v_net, ini_net, seg_net = create_configs(config, config['exp_name'], seed=config['random_seed'], train_frac=p)
+                    exp_conf, n2v_net, ini_net, seg_net, joint_net = create_configs(config, config['exp_name'], seed=config['random_seed'], train_frac=p)
 
-                start_experiment(exp_conf, n2v_net, ini_net, seg_net, 'train_'+str(p))
+                start_experiment(exp_conf, n2v_net, ini_net, seg_net, joint_net, 'train_'+str(p))
 
 
 def create_configs(config, run_name, seed, train_frac):
@@ -367,8 +367,9 @@ def create_configs(config, run_name, seed, train_frac):
     n2v_net = create_n2v_net_config(config)
     ini_net = create_ini_net_config(config)
     seg_net = create_seg_net_config(config)
+    joint_net = create_joint_net_config(config)
 
-    return exp_conf, n2v_net, ini_net, seg_net
+    return exp_conf, n2v_net, ini_net, seg_net, joint_net
 
 
 def create_n2v_net_config(config):
@@ -461,6 +462,36 @@ def create_seg_net_config(config):
     }
     return seg_net
 
+def create_joint_net_config(config):
+    joint_net = {
+        'n_dim' : config['n_dim'],
+        'axes' : config['axes'],
+        'use_denoising': 1,
+        'n2v_neighborhood_radius' : config['n2v_neighborhood_radius'],
+        'n2v_manipulator' : config['n2v_manipulator'],
+        'n2v_patch_shape' : config['n2v_patch_shape' ],
+        'n2v_num_pix' : config['n2v_num_pix'],
+        'batch_norm' : config['batch_norm'],
+        'train_reduce_lr' : config['train_reduce_lr'],
+        'train_checkpoint' : config['train_checkpoint'],
+        'train_tensorboard' : config['train_tensorboard'],
+        'train_batch_size' : config[ 'train_batch_size'],
+        'train_learning_rate' : config['seg_train_learning_rate'],
+        'train_steps_per_epoch' : config['seg_train_steps_per_epoch'],
+        'train_epochs' : config['seg_train_epochs'],
+        'train_loss' : config['train_loss'],
+        'unet_input_shape' : config['unet_input_shape'],
+        'unet_last_activation' : config['unet_last_activation'],
+        'unet_n_first' : config['unet_n_first'],
+        'unet_kern_size' : config['unet_kern_size'],
+        'unet_n_depth' : config['unet_n_depth'],
+        'n_channel_out' : config['n_channel_out'],
+        'n_channel_in' : config['n_channel_in'],
+        'train_scheme' : config['train_scheme']
+    }
+    return joint_net
+
+
 
 def copy_exp_conf(exp_conf, run_dir):
     dir = join('..', '..', 'outdata', exp_conf['exp_name'] + exp_conf['scheme'], run_dir)
@@ -498,7 +529,7 @@ def copy_net_conf(exp_conf, run_dir, net_conf, model_type):
         json.dump(net_conf, file)
 
 
-def start_experiment(exp_conf, n2v_conf, ini_conf, seg_conf, run_dir):
+def start_experiment(exp_conf, n2v_conf, ini_conf, seg_conf, joint_conf, run_dir):
     if isdir(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'], run_dir, exp_conf['model_name'])):
         confirmation = prompt([
             {
@@ -509,7 +540,7 @@ def start_experiment(exp_conf, n2v_conf, ini_conf, seg_conf, run_dir):
             }
         ])
         if confirmation['continue']:
-            run(exp_conf, n2v_conf, ini_conf, seg_conf, run_dir)
+            run(exp_conf, n2v_conf, ini_conf, seg_conf, joint_conf,  run_dir)
         else:
             print('Abort')
     else:
@@ -547,6 +578,12 @@ def start_experiment(exp_conf, n2v_conf, ini_conf, seg_conf, run_dir):
             copy_scripts(exp_conf, run_dir)
             copy_exp_conf(exp_conf, run_dir)
             copy_net_conf(exp_conf, run_dir, seg_conf, '_seg')
+            create_outdir(exp_conf)
+            run(exp_conf, run_dir)
+        elif (exp_conf['scheme'] == 'joint'):
+            copy_scripts(exp_conf, run_dir)
+            copy_exp_conf(exp_conf, run_dir)
+            copy_net_conf(exp_conf, run_dir, joint_conf, '_seg')
             create_outdir(exp_conf)
             run(exp_conf, run_dir)
         else:

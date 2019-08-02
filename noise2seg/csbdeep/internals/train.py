@@ -44,6 +44,7 @@ def prepare_model(model, optimizer, loss, training_scheme='CARE', metrics=('mse'
     elif training_scheme == 'Noise2Void':
         if loss == 'mse':
             loss_standard = eval('loss_noise2void(use_denoising=%s)'%use_denoising)
+            print("Use denosiing is:", use_denoising)
         elif loss == 'mae':
             loss_standard = eval('loss_noise2voidAbs()')
 

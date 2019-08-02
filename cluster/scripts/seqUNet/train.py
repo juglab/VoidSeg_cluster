@@ -3,6 +3,7 @@ import numpy as np
 from csbdeep.utils.n2v_utils import manipulate_val_data
 from skimage.segmentation import find_boundaries
 import json
+import os
 from os.path import join
 import pickle
 from keras.layers import Input, Conv2D, Conv3D, Activation, Lambda
@@ -76,27 +77,13 @@ use_denoising = conf['use_denoising']
 train_files = np.load(exp_params['train_path'])
 X_train = train_files['X_train']
 Y_train = train_files['Y_train']
-if 'CTC' in exp_params['exp_name']:
-    X_val = cutHalf(train_files['X_val'][:640, :640], 2).astype(np.float32)
-    Y_val = cutHalf(train_files['Y_val'][:640, :640], 2).astype(np.float32)
-else:
-    X_val = train_files['X_val'].astype(np.float32)
-    Y_val = train_files['Y_val'].astype(np.float32)
-    
+
+X_val = train_files['X_val'].astype(np.float32)
+Y_val = train_files['Y_val'].astype(np.float32)
+
 mean, std = np.mean(X_train), np.std(X_train)
 X_train = normalize(X_train, mean, std)
 X_val = normalize(X_val, mean, std)
-
-# convert to oneHot
-Y_train_oneHot = convert_to_oneHot(Y_train)
-Y_val_oneHot = convert_to_oneHot(Y_val)
-
-Y_train = np.concatenate(
-    (X_train[..., np.newaxis], np.zeros(X_train.shape, dtype=np.float32)[..., np.newaxis], Y_train_oneHot), axis=3)
-
-# Select fraction
-print('X_train.shape:', X_train.shape[0])
-train_frac = int(np.round((exp_params['train_frac'] / 100) * X_train.shape[0]))
 
 if 'is_seeding' in exp_params.keys():
     if exp_params['is_seeding']:
@@ -105,55 +92,68 @@ if 'is_seeding' in exp_params.keys():
         seed_ind = np.random.permutation(X_train.shape[0])
         X_train = X_train[seed_ind]
         Y_train = Y_train[seed_ind]
-        
-if use_denoising:
-    Y_train[train_frac:, ..., 1:] *= 0
-else:
-    X_train = X_train[:train_frac]
-    Y_train = Y_train[:train_frac]
-
-print('X_train.shape:', X_train.shape[0])
 
 
 if 'augment' in exp_params.keys():
     if exp_params['augment']:
         print('augmenting training data')
         X_ = X_train.copy()
-        X_train_aug = np.concatenate((X_train, np.rot90(X_, 2, (1, 2))))
-        X_train_aug = np.concatenate((X_train_aug, np.flip(X_train_aug, axis=1), np.flip(X_train_aug, axis=2)))
+        X_train_aug = np.concatenate((X_train, np.rot90(X_, 1, (1, 2))))
+        X_train_aug = np.concatenate((X_train_aug, np.rot90(X_, 2, (1, 2))))
+        X_train_aug = np.concatenate((X_train_aug, np.rot90(X_, 3, (1, 2))))
+        X_train_aug = np.concatenate((X_train_aug, np.flip(X_train_aug, axis=1)))
+
         Y_ = Y_train.copy()
-        Y_train_aug = np.concatenate((Y_train, np.rot90(Y_, 2, (1, 2))))
-        Y_train_aug = np.concatenate((Y_train_aug, np.flip(Y_train_aug, axis=1), np.flip(Y_train_aug, axis=2)))
-        print('Training data size after augmentation', X_train.shape)
-        print('Training data size after augmentation', Y_train.shape)
+        Y_train_aug = np.concatenate((Y_train, np.rot90(Y_, 1, (1, 2))))
+        Y_train_aug = np.concatenate((Y_train_aug, np.rot90(Y_, 2, (1, 2))))
+        Y_train_aug = np.concatenate((Y_train_aug, np.rot90(Y_, 3, (1, 2))))
+        Y_train_aug = np.concatenate((Y_train_aug, np.flip(Y_train_aug, axis=1)))
+        print('Training data size after augmentation', X_train_aug.shape)
+        print('Training data size after augmentation', Y_train_aug.shape)
+
+        X_ = X_val.copy()
+        X_val_aug = np.concatenate((X_val, np.rot90(X_, 1, (1, 2))))
+        X_val_aug = np.concatenate((X_val_aug, np.rot90(X_, 2, (1, 2))))
+        X_val_aug = np.concatenate((X_val_aug, np.rot90(X_, 3, (1, 2))))
+        X_val_aug = np.concatenate((X_val_aug, np.flip(X_val_aug, axis=1)))
+
+        Y_ = Y_val.copy()
+        Y_val_aug = np.concatenate((Y_val, np.rot90(Y_, 1, (1, 2))))
+        Y_val_aug = np.concatenate((Y_val_aug, np.rot90(Y_, 2, (1, 2))))
+        Y_val_aug = np.concatenate((Y_val_aug, np.rot90(Y_, 3, (1, 2))))
+        Y_val_aug = np.concatenate((Y_val_aug, np.flip(Y_val_aug, axis=1)))
+
+# convert to oneHot
+Y_train_oneHot = convert_to_oneHot(Y_train_aug)
+Y_val_oneHot = convert_to_oneHot(Y_val_aug)
+
+Y_train_aug = np.concatenate(
+    (X_train_aug[..., np.newaxis], np.zeros(X_train_aug.shape, dtype=np.float32)[..., np.newaxis], Y_train_oneHot), axis=3)
+
+# Select fraction
+print('X_train.shape:', X_train.shape[0])
+train_frac = int(np.round((exp_params['train_frac'] / 100) * X_train.shape[0]))
+if use_denoising:
+    Y_train_aug[train_frac:, ..., 1:] *= 0
+else:
+    X_train_aug = X_train_aug[:train_frac]
+    Y_train_aug = Y_train_aug[:train_frac]
+
+print('X_train.shape:', X_train.shape[0])
+
 
 # prepare validation data
-X_validation = X_val[..., np.newaxis]
-Y_validation = Y_val[..., np.newaxis]
+X_validation = X_val_aug[..., np.newaxis]
+Y_validation = Y_val_aug[..., np.newaxis]
 
 num_pix = conf['n2v_num_pix']
 pixelsInPatch = conf['n2v_patch_shape'][0] * conf['n2v_patch_shape'][1]
 
-# 1. Option
-Y_validation = np.concatenate((X_validation.copy(), np.zeros(X_validation.shape, dtype=np.float32)), axis=3)
-manipulate_val_data(X_validation, Y_validation, num_pix=int(num_pix * X_validation.shape[1] * X_validation.shape[2] / float(pixelsInPatch)),
-                    shape=(X_validation.shape[1], X_validation.shape[2]))
+Y_validation = np.concatenate((X_validation.copy(), np.ones(X_validation.shape, dtype=np.float32)), axis=3)
+# manipulate_val_data(X_validation, Y_validation, num_pix=int(num_pix * X_validation.shape[1] * X_validation.shape[2] / float(pixelsInPatch)), #Not manipulating val_data as it is closer to testing
+#                     shape=(X_validation.shape[1], X_validation.shape[2]))
 
 Y_validation = np.concatenate((Y_validation, Y_val_oneHot), axis=3)
-
-# Augment validation
-if 'augment' in exp_params.keys():
-    if exp_params['augment']:
-        print('augment validation data')
-        X_ = X_validation.copy()
-        X_validation_aug = np.concatenate((X_validation, np.rot90(X_, 2, (1, 2))))
-        X_validation_aug = np.concatenate(
-            (X_validation_aug, np.flip(X_validation_aug, axis=1), np.flip(X_validation_aug, axis=2)))
-        Y_ = Y_validation.copy()
-        Y_validation_aug = np.concatenate((Y_validation, np.rot90(Y_, 2, (1, 2))))
-        Y_validation_aug = np.concatenate(
-            (Y_validation_aug, np.flip(Y_validation_aug, axis=1), np.flip(Y_validation_aug, axis=2)))
-
 
 class CARE_SEQ(CARE):
     def _build(self):
@@ -175,18 +175,18 @@ class CARE_SEQ(CARE):
                               activation="relu", dropout=False, batch_norm=True,
                               n_conv_per_depth=2, pool=(2,2), prefix='n2v')(input)
 
-            final_n2v = conv(1, (1,)*n_dim, activation='linear')(unet)
+            # final_n2v = conv(1, (1,)*n_dim, activation='linear')(unet)
 
             unet_seg = unet_block(2, 32, (3,3),
                               activation="relu", dropout=False, batch_norm=True,
                               n_conv_per_depth=2, pool=(2,2), prefix='seg')(unet)
 
-            final_seg = conv(3, (1,)*n_dim, activation='linear')(unet_seg)
+            final_seg = conv(4, (1,)*n_dim, activation='linear')(unet_seg) #Changed output dimensions
 
-            final_n2v = Activation(activation=last_activation)(final_n2v)
-            final_seg = Activation(activation=last_activation)(final_seg)
+            # final_n2v = Activation(activation=last_activation)(final_n2v)
+            final = Activation(activation=last_activation)(final_seg)
 
-            final = Concatenate(axis=channel_axis)([final_n2v, final_seg])
+            # final = Concatenate(axis=channel_axis)([final_n2v, final_seg])
             return Model(inputs=input, outputs=final)
         return seq_unet((None, None, 1), 'linear')
 
@@ -195,7 +195,18 @@ model = CARE_SEQ(None, name= exp_params['model_name'], basedir= exp_params['base
 print(conf)
 model.keras_model.summary()
 
-hist = model.train(X_train[..., np.newaxis],Y_train,validation_data=(X_validation,Y_validation))
+if(exp_params['scheme'] == "finetune_both"):
+    os.makedirs((exp_params['base_dir']+'/temp_model'),mode=0o775)
+    with open(join(exp_params['base_dir'], 'temp_model', 'config.json'),'w') as file:
+        json.dump(conf, file)
+    model2 = CARE(None, name='temp_model', basedir=exp_params['base_dir'])
+    model2.load_weights('/lustre/projects/juglab/StarVoid/outdata/finN2V_dsb_n20_run8sequential/train_100.0/finN2V_model_denoise/weights_best.h5') #Chnage path depending on run number and seed
+    for la in range(len(model2.keras_model.layers[:37])):
+        model.keras_model.layers[la].set_weights(model2.keras_model.layers[la].get_weights())
+    for sla in range(2,len(model2.keras_model.layers)):
+        model.keras_model.layers[sla+36].set_weights(model2.keras_model.layers[sla].get_weights())
+
+hist = model.train(X_train_aug[..., np.newaxis],Y_train_aug,validation_data=(X_validation,Y_validation))
 
 with open(join(exp_params['base_dir'], exp_params['model_name'], 'history_' + exp_params['model_name'] + '.dat'),
           'wb') as file_pi:

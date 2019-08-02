@@ -27,15 +27,27 @@ class Scheme():
 
     def fractionate_train_data(self, X_train, Y_train):
         train_frac = int(np.round((self.exp_conf['train_frac'] / 100) * X_train.shape[0]))
-        X_train = X_train[:train_frac]
-        Y_train = Y_train[:train_frac]
+        if (self.exp_conf['scheme'] == 'joint'):
+            print("Joint loss! different fractionation")
+            with open(self.exp_conf['base_dir'] + '/' + self.exp_conf['model_name'] + '_seg/' + 'config.json',
+                      'r') as f:
+                joint_conf = json.load(f)
+            if (joint_conf['use_denoising']):
+                print("zeroing out fractionated seg channels")
+                Y_train[train_frac:, ..., 1:] *= 0
+            else:
+                X_train = X_train[:train_frac]
+                Y_train = Y_train[:train_frac]
+        else:
+            X_train = X_train[:train_frac]
+            Y_train = Y_train[:train_frac]
 
         return X_train, Y_train
 
     def prepare_seg_val_data(self, X_val, Y_val, Y_val_oneHot):
 
         X_validation = X_val[..., np.newaxis]
-        Y_validation = Y_val[..., np.newaxis]
+        Y_validation = Y_val[..., np.newaxis] 
         Y_validation = np.concatenate((X_validation.copy(), np.ones(X_validation.shape, dtype=np.float32)), axis=3)
         Y_validation = np.concatenate((Y_validation, Y_val_oneHot), axis=3)
 
@@ -44,7 +56,6 @@ class Scheme():
     def prepare_n2v_val_data(self, X_val, Y_val, Y_val_oneHot):
 
         X_validation = X_val[..., np.newaxis]
-        Y_validation = Y_val[..., np.newaxis]
         Y_validation = np.concatenate((X_validation.copy(), np.zeros(X_validation.shape, dtype=np.float32)), axis=3)
         with open(self.exp_conf['base_dir']+'/'+self.exp_conf['model_name']+'_denoise/'+'config.json', 'r') as f:
             denoise_conf = json.load(f)
@@ -118,22 +129,21 @@ class Scheme():
 
     def create_n2v_train_data(self, train_data_x, train_data_y, n2v_trainval_data):
         X_train = train_data_x
-        Y_train = train_data_y
         X_val = n2v_trainval_data['X_val']
         Y_val = n2v_trainval_data['Y_val']
 
         mean, std = np.mean(X_train), np.std(X_train)
         X_train = normalize(X_train, mean, std)
+        shape = list(X_train[..., np.newaxis].shape)
+        shape[-1] = 4
+        Y_train = np.concatenate((X_train[..., np.newaxis], np.zeros((shape[0], shape[1], shape[2], shape[3]), dtype=np.float32)), axis=3)
+        
         X_val = normalize(X_val, mean, std)
+        Y_val = normalize(Y_val, mean, std)
         X_train, Y_train = self.shuffle_train_data(X_train, Y_train)
         if (self.exp_conf['augment']):
             X_train, Y_train = augment_data(X_train, Y_train)
-            X_val, Y_val = augment_data(X_val, Y_val)
-
-        shape = list(X_train[..., np.newaxis].shape)
-        shape[-1] = 4
-
-        Y_train = np.concatenate((X_train[..., np.newaxis], np.zeros((shape[0], shape[1], shape[2], shape[3]), dtype=np.float32)), axis=3)
+            X_val, Y_val = augment_data(X_val, Y_val)  
 
         shape = list(X_val[..., np.newaxis].shape)
         shape[-1] = 3
@@ -159,7 +169,7 @@ class Scheme():
         X_train = normalize(X_train, mean, std)
         X_val = normalize(X_val, mean, std)
         X_train, Y_train = self.shuffle_train_data(X_train, Y_train)
-        X_train, Y_train = self.fractionate_train_data(X_train, Y_train)
+
         if (self.exp_conf['augment']):
             X_train, Y_train = augment_data(X_train, Y_train)
             X_val, Y_val = augment_data(X_val, Y_val)
@@ -170,6 +180,8 @@ class Scheme():
         Y_train = np.concatenate(
             (X_train[..., np.newaxis], np.zeros(X_train.shape, dtype=np.float32)[..., np.newaxis], Y_train_oneHot),
             axis=3)
+
+        X_train, Y_train = self.fractionate_train_data(X_train, Y_train)
 
         X_val, Y_val = self.prepare_seg_val_data(X_val, Y_val, Y_val_oneHot)
 
@@ -190,9 +202,13 @@ class Scheme():
 
         seg_train_data, seg_test_data = self.load_seg_train_test_data()
         seg_train_d, seg_test_d = self.preprocess_seg(n2v_model, seg_train_data, seg_test_data, mean_std_denoise)
+
+        ####Comment all lines below to run N2V only.
+        
         seg_train, seg_val, mean_std = self.create_seg_train_data(seg_train_d)
         seg_model = self.load_seg_model()
         self.train_seg(seg_model, seg_train, seg_val)
 
         import compute_seg_threshold
+        # import compute_precision_threshold
         self.predict_seg(seg_model, seg_test_d, mean_std)

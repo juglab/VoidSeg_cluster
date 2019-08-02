@@ -12,6 +12,7 @@ from predictseg import PredictSeg
 from sklearn.feature_extraction import image
 from Baseline import Baseline
 from Sequential import Sequential
+from Joint import Joint
 
 with open('experiment.json', 'r') as f:
     exp_params = json.load(f)
@@ -201,3 +202,7 @@ if(exp_params['scheme'] == 'sequential'):
 if(exp_params['scheme'] == 'baseline'): 
     baseline = Baseline()
     baseline.compute()
+
+if(exp_params['scheme'] == 'joint'):
+    joint = Joint()
+    joint.compute()
