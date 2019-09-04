@@ -53,7 +53,7 @@ with open('experiment.json', 'r') as f:
     exp_params = json.load(f)
 print("Opened json!")
 
-train_files = np.load(join('..', '..', '..', *exp_params['train_path'].split('/')[4:]))
+train_files = np.load(exp_params['train_path'])
 # X_train = train_files['X_train']
 # mean, std = np.mean(X_train), np.std(X_train)
 X_val = train_files['X_val']
