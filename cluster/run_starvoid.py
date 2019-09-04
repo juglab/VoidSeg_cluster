@@ -337,12 +337,12 @@ def main():
         config['unet_residual'] = False
         
         pwd = os.getcwd()
-        for run_idx in [1,2,3,4,5,6,7,8]:
+        for run_idx in [1]:
             for p in config['train_frac']:
                 if config['is_seeding']:
                     os.chdir(pwd)
                     run_name = config['exp_name']+'_run'+str(run_idx)
-                    exp_conf, n2v_net, ini_net, seg_net, joint_net = create_configs(config, run_name, seed=run_idx, train_frac=p)
+                    exp_conf, n2v_net, ini_net, seg_net, joint_net = create_configs(config, run_name, seed=8, train_frac=p)
                 else:
                     os.chdir(pwd)
                     exp_conf, n2v_net, ini_net, seg_net, joint_net = create_configs(config, config['exp_name'], seed=config['random_seed'], train_frac=p)

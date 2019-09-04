@@ -42,7 +42,8 @@ class Sequential(Scheme.Scheme):
         return model
 
     def load_seg_train_test_data(self):
-        seg_train_data = np.load(self.exp_conf['train_path'])
+        seg_train_data = np.load(self.exp_conf['train_path']) #Hardcode here for CTC
+        # seg_train_data = np.load("/lustre/projects/juglab/StarVoid/train_data/ctc_seg_TrainVal.npz")
         seg_test_data = np.load(self.exp_conf['test_path'])
         return seg_train_data, seg_test_data
 

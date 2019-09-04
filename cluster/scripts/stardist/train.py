@@ -82,9 +82,11 @@ if 'augment' in exp_params.keys():
         print('Training data size after augmentation', Y_val_aug.shape)
 #Image normalization and hole filling in labels
 X_train_aug = [normalize(x,1,99.8) for x in X_train_aug]
-Y_train_aug = [fill_label_holes(y) for y in Y_train_aug]
+Y_train_aug = [fill_label_holes(y.astype(np.uint16)) for y in Y_train_aug]
+#Y_train_aug = [fill_label_holes(y) for y in Y_train_aug]
 X_val_aug = [normalize(x,1,99.8) for x in X_val_aug]
-Y_val_aug = [fill_label_holes(y) for y in Y_val_aug]
+Y_val_aug = [fill_label_holes(y.astype(np.uint16)) for y in Y_val_aug]
+#Y_val_aug = [fill_label_holes(y) for y in Y_val_aug]
 
 model = StarDist(None, name= exp_params['model_name'], basedir= exp_params['base_dir'])
 

@@ -156,7 +156,7 @@ def main():
                 'type': 'input',
                 'name': 'train_batch_size',
                 'message': 'train_batch_size',
-                'default': '4',
+                'default': '128',
                 'validate': lambda val: int(val) > 0,
                 'filter': lambda val: int(val)
             },
@@ -199,7 +199,7 @@ def main():
                 'type': 'input',
                 'name': 'train_patch_size',
                 'message': 'train_patch_size',
-                'default': '128, 128',
+                'default': '64, 64',
                 'filter': lambda val: tuple([int(x.strip()) for x in val.split(',')])
             },
             {
@@ -208,6 +208,13 @@ def main():
                 'message': 'train_reduce_lr',
                 'default': 'factor: 0.5, patience: 10',
                 'filter': lambda val: {tmp.split(':')[0].strip() : float(tmp.split(':')[1].strip()) for tmp in val.split(',')}
+            },
+            {
+                'type': 'list',
+                'name': 'unet_batch_norm',
+                'message': 'unet_batch_norm',
+                'choices': ['True', 'False'],
+                'filter': lambda val: val == 'False'
             },
             {
                 'type': 'list',
@@ -242,7 +249,7 @@ def main():
                 'type': 'input',
                 'name': 'unet_n_depth',
                 'message': 'unet_n_depth',
-                'default': '3',
+                'default': '2',
                 'filter': lambda val: int(val)
             },
             {

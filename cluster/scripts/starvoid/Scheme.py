@@ -169,21 +169,51 @@ class Scheme():
         X_train = normalize(X_train, mean, std)
         X_val = normalize(X_val, mean, std)
         X_train, Y_train = self.shuffle_train_data(X_train, Y_train)
+        if (self.exp_conf['scheme'] == 'joint'):
+            print("Joint scheme!")
+            print("Doing the right way!")
+            train_frac = int(np.round((self.exp_conf['train_frac'] / 100) * X_train.shape[0]))
+            Y_train1 = Y_train[:train_frac]
+            X_train1 = X_train[:train_frac]
+            Y_train2 = Y_train[train_frac:]
+            X_train2 = X_train[train_frac:]
+            Y_train2 *= 0
 
-        if (self.exp_conf['augment']):
-            X_train, Y_train = augment_data(X_train, Y_train)
-            X_val, Y_val = augment_data(X_val, Y_val)
 
-        Y_train_oneHot = convert_to_oneHot(Y_train)
-        Y_val_oneHot = convert_to_oneHot(Y_val)
+            if (self.exp_conf['augment']):
+                X_train1, Y_train1 = augment_data(X_train1, Y_train1)
+                X_train2, Y_train2 = augment_data(X_train2, Y_train2)
+                X_train = np.concatenate((X_train1, X_train2), axis=0)
+                Y_train = np.concatenate((Y_train1, Y_train2), axis=0)
+                X_val, Y_val = augment_data(X_val, Y_val)
 
-        Y_train = np.concatenate(
-            (X_train[..., np.newaxis], np.zeros(X_train.shape, dtype=np.float32)[..., np.newaxis], Y_train_oneHot),
-            axis=3)
+            Y_train_oneHot = convert_to_oneHot(Y_train)
+            Y_val_oneHot = convert_to_oneHot(Y_val)
 
-        X_train, Y_train = self.fractionate_train_data(X_train, Y_train)
+            Y_train = np.concatenate(
+                (X_train[..., np.newaxis], np.zeros(X_train.shape, dtype=np.float32)[..., np.newaxis], Y_train_oneHot),
+                axis=3)
 
-        X_val, Y_val = self.prepare_seg_val_data(X_val, Y_val, Y_val_oneHot)
+            # X_train, Y_train = self.fractionate_train_data(X_train, Y_train)
+
+            X_val, Y_val = self.prepare_seg_val_data(X_val, Y_val, Y_val_oneHot)
+
+        else:
+            print("Not joint scheme!")
+            X_train, Y_train = self.fractionate_train_data(X_train, Y_train)
+            if (self.exp_conf['augment']):
+                X_train, Y_train = augment_data(X_train, Y_train)
+                X_val, Y_val = augment_data(X_val, Y_val)
+
+            Y_train_oneHot = convert_to_oneHot(Y_train)
+            Y_val_oneHot = convert_to_oneHot(Y_val)
+
+            Y_train = np.concatenate(
+                (X_train[..., np.newaxis], np.zeros(X_train.shape, dtype=np.float32)[..., np.newaxis], Y_train_oneHot),
+                axis=3)
+
+            X_val, Y_val = self.prepare_seg_val_data(X_val, Y_val, Y_val_oneHot)
+
 
         return (X_train[..., np.newaxis], Y_train), (X_val, Y_val), (mean, std)
 
@@ -203,7 +233,7 @@ class Scheme():
         seg_train_data, seg_test_data = self.load_seg_train_test_data()
         seg_train_d, seg_test_d = self.preprocess_seg(n2v_model, seg_train_data, seg_test_data, mean_std_denoise)
 
-        ####Comment all lines below to run N2V only.
+        ####Comment all lines below to run N2V only through Sequential script.
         
         seg_train, seg_val, mean_std = self.create_seg_train_data(seg_train_d)
         seg_model = self.load_seg_model()
