@@ -36,7 +36,6 @@ for exp in exp_names:
         fractions = {float(basename(x).split('_')[1]) : x for x in glob(join(run, '*'))}
         fraction_keys = [x for x in fractions.keys()]
         fraction_keys.sort()
-
         for frac in fraction_keys:
             print('-', frac)
             precision_score = 0
@@ -96,7 +95,7 @@ for exp in exp_names:
     stats = evaluation_scores[exp]
     plt.errorbar(stats[:,0], stats[:,2], yerr=stats[:,3], label=exp)
 
-plt.ylim(0.25, 0.8)
+plt.ylim(0.25, 0.9)
 plt.xlabel('Training Data Fractions')
 plt.ylabel('Precision Score')
 plt.legend(loc='lower right')

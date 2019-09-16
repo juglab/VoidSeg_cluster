@@ -52,7 +52,7 @@ def onehot_encoding(lbl, n_classes=3, dtype=np.uint32):
     return onehot
 
 def create_patches(images, masks, size):
+
     patchesimages = image.extract_patches_2d(images, (size, size), 10, 0)
     patchesmasks = image.extract_patches_2d(masks, (size, size), 10, 0)
-
     return patchesimages, patchesmasks

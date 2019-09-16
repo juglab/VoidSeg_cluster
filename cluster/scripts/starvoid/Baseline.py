@@ -41,8 +41,8 @@ class Baseline(Scheme.Scheme):
 
     def load_seg_model(self):
         model = CARE(None, name=self.exp_conf['model_name']+'_seg', basedir=self.exp_conf['base_dir'])
-        model.load_weights(
-            '/lustre/projects/juglab/StarVoid/outdata/finN2vDepth4_dsb_n20_run8sequential/train_100.0/finN2vDepth4_model_denoise/weights_best.h5')
+        # model.load_weights(
+        #     '/lustre/projects/juglab/StarVoid/outdata/finN2vDepth4_dsb_n40_run1sequential/train_100.0/finN2vDepth4_model_denoise/weights_best.h5')
         return model
 
     def train_seg(self, model, train, val):

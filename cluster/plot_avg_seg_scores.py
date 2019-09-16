@@ -37,7 +37,7 @@ for exp in exp_names:
         fraction_keys = [x for x in fractions.keys()]
         fraction_keys.sort()
 
-        for frac in fraction_keys[0:8]:
+        for frac in fraction_keys:
             print('-', frac)
             seg_score = 0
             result_files = glob(join(fractions[frac], 'mask*.tif'))
@@ -96,7 +96,7 @@ for exp in exp_names:
     stats = evaluation_scores[exp]
     plt.errorbar(stats[:,0], stats[:,2], yerr=stats[:,3], label=exp)
 
-plt.ylim(0.45, 0.8)
+plt.ylim(0.3, 0.8)
 plt.xlabel('Training Data Fractions')
 plt.ylabel('SEG Score')
 plt.legend(loc='lower right')

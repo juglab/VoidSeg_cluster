@@ -148,7 +148,7 @@ def main():
                 'type': 'input',
                 'name': 'unet_n_depth',
                 'message': 'unet_n_depth',
-                'default': '2',
+                'default': '5',
                 'filter': lambda val: int(val)
             },
             {
@@ -260,7 +260,8 @@ def main():
                 'type': 'input',
                 'name': 'train_batch_size',
                 'message': 'train_batch_size',
-                'default': '128',
+                # 'default': '128',
+                'default': '32',
                 'validate': lambda val: int(val) > 0,
                 'filter': lambda val: int(val)
             },
@@ -342,7 +343,7 @@ def main():
                 if config['is_seeding']:
                     os.chdir(pwd)
                     run_name = config['exp_name']+'_run'+str(run_idx)
-                    exp_conf, n2v_net, ini_net, seg_net, joint_net = create_configs(config, run_name, seed=8, train_frac=p)
+                    exp_conf, n2v_net, ini_net, seg_net, joint_net = create_configs(config, run_name, seed=5, train_frac=p)
                 else:
                     os.chdir(pwd)
                     exp_conf, n2v_net, ini_net, seg_net, joint_net = create_configs(config, config['exp_name'], seed=config['random_seed'], train_frac=p)
