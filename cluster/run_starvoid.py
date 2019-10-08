@@ -148,7 +148,7 @@ def main():
                 'type': 'input',
                 'name': 'unet_n_depth',
                 'message': 'unet_n_depth',
-                'default': '5',
+                'default': '4',
                 'filter': lambda val: int(val)
             },
             {
@@ -260,8 +260,7 @@ def main():
                 'type': 'input',
                 'name': 'train_batch_size',
                 'message': 'train_batch_size',
-                # 'default': '128',
-                'default': '32',
+                'default': '128',
                 'validate': lambda val: int(val) > 0,
                 'filter': lambda val: int(val)
             },
@@ -338,12 +337,12 @@ def main():
         config['unet_residual'] = False
         
         pwd = os.getcwd()
-        for run_idx in [1]:
+        for run_idx in [1,2,3,4,5]:
             for p in config['train_frac']:
                 if config['is_seeding']:
                     os.chdir(pwd)
                     run_name = config['exp_name']+'_run'+str(run_idx)
-                    exp_conf, n2v_net, ini_net, seg_net, joint_net = create_configs(config, run_name, seed=5, train_frac=p)
+                    exp_conf, n2v_net, ini_net, seg_net, joint_net = create_configs(config, run_name, seed=run_idx, train_frac=p)
                 else:
                     os.chdir(pwd)
                     exp_conf, n2v_net, ini_net, seg_net, joint_net = create_configs(config, config['exp_name'], seed=config['random_seed'], train_frac=p)
@@ -597,7 +596,7 @@ def run(exp_conf, run_dir):
 
     os.chdir(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'], run_dir))
     print('Current directory:', os.getcwd())
-    cmd = "sbatch --exclude=r02n01 -p gpu --gres=gpu:1 --mem-per-cpu 256000 -t 48:00:00 --export=ALL -J StarVoid -o "+log_file+" scripts/starvoid/start_job_starvoid_clean.sh"
+    cmd = "sbatch --exclude=r02n01,r02n02,r02n03,r02n04 -p gpu --gres=gpu:1 --mem-per-cpu 256000 -t 48:00:00 --export=ALL -J StarVoid -o "+log_file+" scripts/starvoid/start_job_starvoid_clean.sh"
     print(cmd)
     os.system(cmd)
 

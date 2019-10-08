@@ -22,7 +22,8 @@ with open(args.config, 'r') as f:
     conf = json.load(f)
 
 gt_files = glob(join(conf['gt'], 'man_seg*.tif'))
-gt_images = {int(basename(x)[8:-4]) : imread(x) for x in gt_files}
+gt_images = {int(basename(x)[7:-4]) : imread(x) for x in gt_files}
+#gt_images = {int(basename(x)[8:-4]) : imread(x) for x in gt_files}
 gt_image_keys = [x for x in gt_images.keys()]
 gt_image_keys.sort()
 
@@ -44,7 +45,6 @@ for exp in exp_names:
             result_images = {int(basename(x)[4:-4]) : imread(x) for x in result_files}
             result_image_keys = [x for x in result_images.keys()]
             result_image_keys.sort()
-
             for gt_k, result_k in zip(gt_image_keys, result_image_keys):
                 seg_score += seg(gt_images[gt_k], result_images[result_k])
 
@@ -77,7 +77,7 @@ for exp in exp_names:
     print('Stats for', exp)
     for i in range(len(keys)):
         key = keys[i]
-        print(key, mean_run[key], std_run[key], low_perc[key], up_perc[key], min[key], max[key])
+        print(key, mean_run[key], std_run[key]/np.sqrt(n_run[key]), low_perc[key], up_perc[key], min[key], max[key])
         stats[i,0] = key
         stats[i,1] = n_run[key]
         stats[i,2] = mean_run[key]

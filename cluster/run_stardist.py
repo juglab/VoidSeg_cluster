@@ -263,7 +263,7 @@ def main():
 
         config = prompt(questions)
         pwd = os.getcwd()
-        for run_idx in [1,2,3,4,5,6,7,8]:
+        for run_idx in [1,2,3,4,5]:
             for p in config['train_frac']:
                 if config['is_seeding']:
                     os.chdir(pwd)
@@ -349,7 +349,7 @@ def run(exp_conf, net_conf, run_dir):
 
     os.chdir(join('../..', 'outdata', exp_conf['exp_name'], run_dir))
     print('Current directory:', os.getcwd())
-    cmd = "sbatch --exclude=r02n01 -p gpu --gres=gpu:1 --mem-per-cpu 256000 -t 48:00:00 --export=ALL -J StarVoid -o "+log_file+" scripts/stardist/start_job.sh"
+    cmd = "sbatch --exclude=r02n01,r02n02,r02n03 -p gpu --gres=gpu:1 --mem-per-cpu 256000 -t 48:00:00 --export=ALL -J StarVoid -o "+log_file+" scripts/stardist/start_job.sh"
  #    cmd = "scripts/stardist/start_job.sh"
     print(cmd)
     os.system(cmd)
