@@ -19,6 +19,14 @@ For example, the training and validation data for noise level n10 for DSB datase
 Each of the .npz files in sub-folder train_data has four keys- `X_train`, `Y_train`, `X_val` and `Y_val`.
 Each of the .npz files in sub-folder test_data has two keys- `X_test`, `Y_test`.
 
+## Experiments to run
+The following experiments can be run with the code.
+* U-Net baseline 
+* U-Net Sequential
+* U-Net finetune
+* U-net finetune sequential
+* StarDist baseline
+* StarDist Sequential
 
 __Note:__ The relative paths are currently hardcoded!
 
