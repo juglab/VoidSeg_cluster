@@ -11,13 +11,13 @@ An overview of the Noise2Seg (StarVoid/VoidSeg) project. This branch contains th
 
 ## Datasets used
 All data used for the experiments can be found at https://owncloud.mpi-cbg.de/index.php/s/giCEfFymkuM5N7j
-The link contains two folders namely- DSB and BBBC. Inside each folder, there are two subfolders named (i)train_data containing training and validation data and (ii) test_data containing test data.
+The link contains two folders namely- `DSB` and `BBBC`. Inside each folder, there are two subfolders named (i)`train_data` containing training and validation data and (ii) `test_data` containing test data.
 For DSB dataset, we use noise levels n10, n20 and n40 (where n10 represents corruption of clean (original) microscopy images with Gaussian noise of mean 0 and std 10). For BBBC dataset, we use noise levels n150 and n200. 
 
-For example, the training and validation data for noise level n10 for DSB dataset is located in DSB/train_data/DSB2018_TrainVal10.npz. 
+For example, the training and validation data for noise level n10 for DSB dataset is located in `DSB/train_data/DSB2018_TrainVal10.npz`. 
 
-Each of the .npz files in sub-folder train_data has four keys- 'X_train', 'Y_train', 'X_val' and 'Y_val'.
-Each of the .npz files in sub-folder test_data has two keys- 'X_test', 'Y_test'.
+Each of the .npz files in sub-folder train_data has four keys- `X_train`, `Y_train`, `X_val` and `Y_val`.
+Each of the .npz files in sub-folder test_data has two keys- `X_test`, `Y_test`.
 
 
 __Note:__ The relative paths are currently hardcoded!
