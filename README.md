@@ -1,5 +1,24 @@
-# Noise2Seg Documentation (27.05.2019)
+# VoidSeg Documentation (27.05.2019)
+Under review at ISBI 2020. 
+
+Deep learning (DL) has arguably emerged as the method of choice for the detection and segmentation of biological structures in microscopy images. 
+However, DL typically needs copious amounts of annotated training data that is for biomedical projects typically not available and excessively expensive to generate. 
+Additionally, tasks become harder in the presence of noise, requiring even more high-quality training data.
+Hence, we propose to use denoising networks to improve the performance of other DL-based image segmentation methods. 
+More specifically, we present ideas on how state-of-the-art self-supervised CARE networks can improve cell/nuclei segmentation in microscopy data. 
+Using two state-of-the-art baseline methods, U-Net and StarDist, we show that our ideas consistently improve the quality of resulting segmentations, especially when only limited training data for noisy micrographs are available.
 An overview of the Noise2Seg (StarVoid/VoidSeg) project. This branch contains the working implementation of VoidSeg which is used for the current research regarding the question if N2V training could help the training of a 3-class segmentation network. 
+
+## Datasets used
+All data used for the experiments can be found at https://owncloud.mpi-cbg.de/index.php/s/giCEfFymkuM5N7j
+The link contains two folders namely- DSB and BBBC. Inside each folder, there are two subfolders named (i)train_data containing training and validation data and (ii) test_data containing test data.
+For DSB dataset, we use noise levels n10, n20 and n40 (where n10 represents corruption of clean (original) microscopy images with Gaussian noise of mean 0 and std 10). For BBBC dataset, we use noise levels n150 and n200. 
+
+For example, the training and validation data for noise level n10 for DSB dataset is located in DSB/train_data/DSB2018_TrainVal10.npz. 
+
+Each of the .npz files in sub-folder train_data has four keys- 'X_train', 'Y_train', 'X_val' and 'Y_val'.
+Each of the .npz files in sub-folder test_data has two keys- 'X_test', 'Y_test'.
+
 
 __Note:__ The relative paths are currently hardcoded!
 
