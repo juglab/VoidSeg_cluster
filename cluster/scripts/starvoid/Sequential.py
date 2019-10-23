@@ -46,8 +46,7 @@ class Sequential(Scheme.Scheme):
         return model
 
     def load_seg_train_test_data(self):
-        seg_train_data = np.load(self.exp_conf['train_path']) #Hardcode here for CTC
-        # seg_train_data = np.load("/lustre/projects/juglab/StarVoid/train_data/ctc_seg_TrainVal.npz")
+        seg_train_data = np.load(self.exp_conf['train_path'])
         seg_test_data = np.load(self.exp_conf['test_path'])
         return seg_train_data, seg_test_data
 
@@ -84,3 +83,4 @@ class Sequential(Scheme.Scheme):
         with open(join(self.exp_conf['base_dir'], self.exp_conf['model_name']+str('_seg'), 'history_' + self.exp_conf['model_name'] + str('_seg')+'.dat'),
                   'wb') as file_pi:
               pickle.dump(hist.history, file_pi)
+              
