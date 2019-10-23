@@ -329,10 +329,19 @@ def main():
                 'name': 'scheme',
                 'message': 'scheme',
                 'choices': ['baseline', 'sequential', 'finetune', 'finetune_sequential']
+            },
+            {
+                'type':'input',
+                'name':'path_to_trained_weights',
+                'message':'path_to_trained_weights',
+                'default':'/lustre/projects/juglab/StarVoid/outdata/***/train_100.0/***/weights_best.h5'
             }
         ]
 
         config = prompt(questions)
+        if((config['scheme']=='finetune' or config['scheme']=='finetune_sequential') and config['path_to_trained_weights'] is None):
+            parser.error("Parser requires path to trained weights.")
+
         config['probabilistic'] = False
         config['unet_residual'] = False
         
@@ -342,7 +351,9 @@ def main():
                 if config['is_seeding']:
                     os.chdir(pwd)
                     run_name = config['exp_name']+'_run'+str(run_idx)
-                    exp_conf, n2v_net, ini_net, seg_net = create_configs(config, run_name, seed=run_idx, train_frac=p)
+
+                    exp_conf, n2v_net, ini_net, seg_net= create_configs(config, run_name, seed=run_idx, train_frac=p)
+
                 else:
                     os.chdir(pwd)
                     exp_conf, n2v_net, ini_net, seg_net = create_configs(config, config['exp_name'], seed=config['random_seed'], train_frac=p)
@@ -367,6 +378,7 @@ def create_configs(config, run_name, seed, train_frac):
     n2v_net = create_n2v_net_config(config)
     ini_net = create_ini_net_config(config)
     seg_net = create_seg_net_config(config)
+
 
     return exp_conf, n2v_net, ini_net, seg_net
 

@@ -40,8 +40,9 @@ class Baseline(Scheme.Scheme):
         return np.load(self.exp_conf['train_path']), np.load(self.exp_conf['test_path'])
 
     def load_seg_model(self):
-        model = CARE(None, name=self.exp_conf['model_name']+'_seg', basedir=self.exp_conf['base_dir'])
-        # model.load_weights('/lustre/projects/juglab/StarVoid/outdata/finN2vDepth3_bbbc_n150_run1sequential/train_100.0/finN2vDepth3_model_denoise/weights_best.h5')
+        model = CARE(None, name=self.exp_conf['model_name'] + '_seg', basedir=self.exp_conf['base_dir'])
+        if(self.exp_conf['scheme']=='finetune' or self.exp_conf['scheme']=='finetune_sequential'):
+            model.load(self.exp_conf['path_to_trained_weights'])
         return model
 
     def train_seg(self, model, train, val):
