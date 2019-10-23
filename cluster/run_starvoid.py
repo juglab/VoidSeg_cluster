@@ -342,12 +342,12 @@ def main():
                 if config['is_seeding']:
                     os.chdir(pwd)
                     run_name = config['exp_name']+'_run'+str(run_idx)
-                    exp_conf, n2v_net, ini_net, seg_net, joint_net = create_configs(config, run_name, seed=run_idx, train_frac=p)
+                    exp_conf, n2v_net, ini_net, seg_net = create_configs(config, run_name, seed=run_idx, train_frac=p)
                 else:
                     os.chdir(pwd)
-                    exp_conf, n2v_net, ini_net, seg_net, joint_net = create_configs(config, config['exp_name'], seed=config['random_seed'], train_frac=p)
+                    exp_conf, n2v_net, ini_net, seg_net = create_configs(config, config['exp_name'], seed=config['random_seed'], train_frac=p)
 
-                start_experiment(exp_conf, n2v_net, ini_net, seg_net, joint_net, 'train_'+str(p))
+                start_experiment(exp_conf, n2v_net, ini_net, seg_net, 'train_'+str(p))
 
 
 def create_configs(config, run_name, seed, train_frac):
@@ -367,9 +367,8 @@ def create_configs(config, run_name, seed, train_frac):
     n2v_net = create_n2v_net_config(config)
     ini_net = create_ini_net_config(config)
     seg_net = create_seg_net_config(config)
-    joint_net = create_joint_net_config(config)
 
-    return exp_conf, n2v_net, ini_net, seg_net, joint_net
+    return exp_conf, n2v_net, ini_net, seg_net
 
 
 def create_n2v_net_config(config):
@@ -500,7 +499,7 @@ def copy_net_conf(exp_conf, run_dir, net_conf, model_type):
         json.dump(net_conf, file)
 
 
-def start_experiment(exp_conf, n2v_conf, ini_conf, seg_conf, joint_conf, run_dir):
+def start_experiment(exp_conf, n2v_conf, ini_conf, seg_conf, run_dir):
     if isdir(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'], run_dir, exp_conf['model_name'])):
         confirmation = prompt([
             {
@@ -511,7 +510,7 @@ def start_experiment(exp_conf, n2v_conf, ini_conf, seg_conf, joint_conf, run_dir
             }
         ])
         if confirmation['continue']:
-            run(exp_conf, n2v_conf, ini_conf, seg_conf, joint_conf,  run_dir)
+            run(exp_conf, n2v_conf, ini_conf, seg_conf, run_dir)
         else:
             print('Abort')
     else:
@@ -531,14 +530,14 @@ def start_experiment(exp_conf, n2v_conf, ini_conf, seg_conf, joint_conf, run_dir
             copy_net_conf(exp_conf, run_dir, seg_conf, '_seg')
             create_outdir(exp_conf)
             run(exp_conf, run_dir)
-        elif(exp_conf['scheme'] == 'sequential'):
+        elif(exp_conf['scheme'] == 'denoising'):
             copy_scripts(exp_conf, run_dir)
             copy_exp_conf(exp_conf, run_dir)
             copy_net_conf(exp_conf, run_dir, n2v_conf, '_denoise')
             copy_net_conf(exp_conf, run_dir, seg_conf, '_seg')
             create_outdir(exp_conf)
             run(exp_conf, run_dir)
-        elif(exp_conf['scheme'] == 'baseline'):
+        elif(exp_conf['scheme'] == 'segmentation'):
             copy_scripts(exp_conf, run_dir)
             copy_exp_conf(exp_conf, run_dir)
             copy_net_conf(exp_conf, run_dir, seg_conf, '_seg')

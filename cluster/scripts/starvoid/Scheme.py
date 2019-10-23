@@ -234,11 +234,15 @@ class Scheme():
         seg_train_d, seg_test_d = self.preprocess_seg(n2v_model, seg_train_data, seg_test_data, mean_std_denoise)
 
         ####Comment all lines below to run N2V only through Sequential script.
-        
-        seg_train, seg_val, mean_std = self.create_seg_train_data(seg_train_d)
-        seg_model = self.load_seg_model()
-        self.train_seg(seg_model, seg_train, seg_val)
 
-        import compute_seg_threshold
-        # import compute_precision_threshold
-        self.predict_seg(seg_model, seg_test_d, mean_std)
+        if (self.scheme != "sequential"):
+            seg_train, seg_val, mean_std = self.create_seg_train_data(seg_train_d)
+            seg_model = self.load_seg_model()
+            self.train_seg(seg_model, seg_train, seg_val)
+
+            import compute_seg_threshold
+            # import compute_precision_threshold
+            self.predict_seg(seg_model, seg_test_d, mean_std)
+
+        else:
+            print("Finisihing N2V part")
