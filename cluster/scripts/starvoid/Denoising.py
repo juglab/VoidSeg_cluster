@@ -7,7 +7,7 @@ from os.path import dirname
 import pickle
 
 
-class Sequential(Scheme.Scheme):
+class Denoising(Scheme.Scheme):
 
     def load_n2v_train_test_data(self):
         n2v_train_data = np.load(self.exp_conf['train_path'])
@@ -26,7 +26,7 @@ class Sequential(Scheme.Scheme):
 
         print(X_train.shape, X_test.shape)
 
-        # if(X_test.shape[1]==X_train.shape[1] and X_test.shape[2]==X_train.shape[2]):
+        # if(X_test.shape[1]==X_train.shape[1] and X_test.shape[2]==X_train.shape[2]): //TODO make it generic to cover the case when test data and train data have same shape
         #     X_test_patches = X_test
         #     Y_test_patches = Y_test
         # else:
@@ -57,7 +57,7 @@ class Sequential(Scheme.Scheme):
         clean_train, clean_val, clean_test = self.predict_denoise(n2v_model, n2v_train_data, n2v_test_data, mean_std_denoise)
         clean_train = clean_train[:, :, :, 0]
         clean_val = clean_val[:, :, :, 0]
-        # if (clean_test.shape[1] == clean_train.shape[1] and clean_test.shape[2] == clean_train.shape[2]):
+        # if (clean_test.shape[1] == clean_train.shape[1] and clean_test.shape[2] == clean_train.shape[2]):  //TODO make it generic to cover the case when test data and train data have same shape
         #     clean_test = clean_test[:,:,:,0]
         # else:
         for test_img_num in range(clean_test.shape[0]):  # Since test set has images of different shapes, zeroing out segmentation chnnel is done individually for each image

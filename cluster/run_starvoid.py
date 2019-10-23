@@ -328,7 +328,7 @@ def main():
                 'type': 'list',
                 'name': 'scheme',
                 'message': 'scheme',
-                'choices': ['baseline', 'sequential', 'finetune', 'finetune_sequential']
+                'choices': ['denoising', 'segmentation']
             },
             {
                 'type':'input',
@@ -339,7 +339,7 @@ def main():
         ]
 
         config = prompt(questions)
-        if((config['scheme']=='finetune' or config['scheme']=='finetune_sequential') and config['path_to_trained_weights'] is None):
+        if((config['scheme']=='segmentation') and config['path_to_trained_weights'] is None):
             parser.error("Parser requires path to trained weights.")
 
         config['probabilistic'] = False
@@ -527,22 +527,7 @@ def start_experiment(exp_conf, n2v_conf, ini_conf, seg_conf, run_dir):
             print('Abort')
     else:
 
-        if(exp_conf['scheme'] == 'finetune_sequential'):
-            copy_scripts(exp_conf, run_dir)
-            copy_exp_conf(exp_conf, run_dir)
-            copy_net_conf(exp_conf, run_dir, n2v_conf, '_denoise')
-            copy_net_conf(exp_conf, run_dir, ini_conf, '_init')
-            copy_net_conf(exp_conf, run_dir, seg_conf, '_seg')
-            create_outdir(exp_conf)
-            run(exp_conf, run_dir)
-        elif(exp_conf['scheme'] == 'finetune'):
-            copy_scripts(exp_conf, run_dir)
-            copy_exp_conf(exp_conf, run_dir)
-            copy_net_conf(exp_conf, run_dir, ini_conf, '_init')
-            copy_net_conf(exp_conf, run_dir, seg_conf, '_seg')
-            create_outdir(exp_conf)
-            run(exp_conf, run_dir)
-        elif(exp_conf['scheme'] == 'denoising'):
+        if(exp_conf['scheme'] == 'denoising'):
             copy_scripts(exp_conf, run_dir)
             copy_exp_conf(exp_conf, run_dir)
             copy_net_conf(exp_conf, run_dir, n2v_conf, '_denoise')
@@ -565,7 +550,7 @@ def run(exp_conf, run_dir):
 
     os.chdir(join('../..', 'outdata', exp_conf['exp_name']+exp_conf['scheme'], run_dir))
     print('Current directory:', os.getcwd())
-    cmd = "sbatch --exclude=r02n01,r02n02,r02n03,r02n04 -p gpu --gres=gpu:1 --mem-per-cpu 256000 -t 48:00:00 --export=ALL -J StarVoid -o "+log_file+" scripts/starvoid/start_job_starvoid_clean.sh"
+    cmd = "sbatch --exclude=r02n01 -p gpu --gres=gpu:1 --mem-per-cpu 256000 -t 48:00:00 --export=ALL -J StarVoid -o "+log_file+" scripts/starvoid/start_job_starvoid_clean.sh"
     print(cmd)
     os.system(cmd)
 

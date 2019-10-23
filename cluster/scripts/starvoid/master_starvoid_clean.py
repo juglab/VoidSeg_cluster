@@ -6,8 +6,8 @@ import json
 from os.path import join, dirname
 import pickle
 from sklearn.feature_extraction import image
-from Baseline import Baseline
-from Sequential import Sequential
+from Segmentation import Segmentation
+from Denoising import Denoising
 
 with open('experiment.json', 'r') as f:
     exp_params = json.load(f)
@@ -23,24 +23,10 @@ def create_patches(images, masks, size):
     
     return patchesimages, patchesmasks
     
-if(exp_params['scheme'] == 'sequential'):
-    print(exp_params)
-    sequential = Sequential()
-    sequential.compute()
-    ### The denoising part is finished here, now do the segmentation by creating a baseline object. But first change train_data path and test_data path along with Scheme in config
-    exp_params['scheme'] = 'baseline'
-    exp_params['train_path'] = dirname(exp_params['train_path'])+'/N2V_TrainVal_'+exp_params['exp_name']+'.npz'
-    exp_params['test_path'] = dirname(exp_params['test_path']) + '/N2V_Test_' + exp_params['exp_name'] + '.npz'
+if(exp_params['scheme'] == 'denoising'):
+    denoising = Denoising()
+    denoising.compute()
 
-    print("Changing exp conf scheme to baseline and the training and test data paths")
-    print(exp_params, flush = True)
-
-    with open('experiment.json','w') as file:
-        json.dump(exp_params, file)
-    baseline = Baseline()
-    baseline.compute()
-
-    
-if(exp_params['scheme'] == 'baseline'): 
-    baseline = Baseline()
-    baseline.compute()
+if(exp_params['scheme'] == 'segmentation'):
+    segmentation = Segmentation()
+    segmentation.compute()

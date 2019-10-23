@@ -5,7 +5,7 @@ from os.path import join
 import pickle
 
 
-class Baseline(Scheme.Scheme):
+class Segmentation(Scheme.Scheme):
 
     def load_n2v_train_test_data(self):
         # Nothing to do
@@ -41,7 +41,7 @@ class Baseline(Scheme.Scheme):
 
     def load_seg_model(self):
         model = CARE(None, name=self.exp_conf['model_name'] + '_seg', basedir=self.exp_conf['base_dir'])
-        if(self.exp_conf['scheme']=='finetune' or self.exp_conf['scheme']=='finetune_sequential'):
+        if(self.exp_conf['scheme']=='segmentation' and self.exp_conf['scheme']=='finetune_sequential'): #TODO Condition check
             model.load(self.exp_conf['path_to_trained_weights'])
         return model
 
