@@ -2,6 +2,7 @@ import Scheme
 import numpy as np
 from csbdeep.models import CARE
 from os.path import join
+import os
 import pickle
 
 
@@ -41,7 +42,7 @@ class Segmentation(Scheme.Scheme):
 
     def load_seg_model(self):
         model = CARE(None, name=self.exp_conf['model_name'] + '_seg', basedir=self.exp_conf['base_dir'])
-        if(self.exp_conf['scheme']=='segmentation' and self.exp_conf['scheme']=='finetune_sequential'): #TODO Condition check
+        if(self.exp_conf['scheme']=='segmentation' and os.path.exists(self.exp_conf['path_to_trained_weights'])==True): #TODO Condition check
             model.load(self.exp_conf['path_to_trained_weights'])
         return model
 

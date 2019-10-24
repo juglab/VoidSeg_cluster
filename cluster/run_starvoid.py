@@ -339,14 +339,14 @@ def main():
         ]
 
         config = prompt(questions)
-        if((config['scheme']=='segmentation') and config['path_to_trained_weights'] is None):
-            parser.error("Parser requires path to trained weights.")
+        # if((config['scheme']=='segmentation') and config['path_to_trained_weights'] is None):
+        #     parser.error("Parser requires path to trained weights.")
 
         config['probabilistic'] = False
         config['unet_residual'] = False
         
         pwd = os.getcwd()
-        for run_idx in [1,2,3,4,5]:
+        for run_idx in [1]:
             for p in config['train_frac']:
                 if config['is_seeding']:
                     os.chdir(pwd)
