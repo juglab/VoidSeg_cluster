@@ -42,8 +42,8 @@ class Segmentation(Scheme.Scheme):
 
     def load_seg_model(self):
         model = CARE(None, name=self.exp_conf['model_name'] + '_seg', basedir=self.exp_conf['base_dir'])
-        if(self.exp_conf['scheme']=='segmentation' and os.path.exists(self.exp_conf['path_to_trained_weights'])==True): #TODO Condition check
-            model.load(self.exp_conf['path_to_trained_weights'])
+        if(self.exp_conf['scheme']=='segmentation' and os.path.exists(self.exp_conf['trained_weights'])==True): #TODO Condition check
+            model.load(self.exp_conf['trained_weights'])
         return model
 
     def train_seg(self, model, train, val):
