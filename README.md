@@ -65,7 +65,7 @@ Similar to denoiisng, for each experiment&training-fraction a directory `outdata
 * `backgroundXXX.tif`: Is the background segmentation result for the best average precision/seg-score.
 * `borderXXX.tif`: Is the border segmentation result for the best average precision/seg-score.
 * `foregroundXXX.tif`: Is the foreground segmentation result for the best average precision/seg-score. 
-* `foregroundXXX.tif`: Is the foreground segmentation result for the best average precision/seg-score.
+* `maskXXX.tif`: Is the instance segmentation result for the best average precision/seg-score.
 
 Using the segmentation procedure described above, U-Net baseline, U-Net sequential, U-Net finetune and U-Net Finetune sequential schemes can be run. It should be noted that for U-Net Sequential, U-Net finetune and U-Net Finetune sequential schemes, segmentation part must be performed after running denoising part in the manner described above. Just make sure to choose the right denoised train and test data when prompted by the script on the command line for U-Net Sequential and U-Net Finetune sequential schemes. Also, for U-Net Finetune and U-Net Finetune sequential schemes, the command line interface will prompt to enter the path to the weights of N2V network for initialization of segmentation network. Please select the appropriate path.
 
