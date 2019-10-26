@@ -1,4 +1,4 @@
-# VoidSeg Documentation (27.05.2019)
+# VoidSeg Documentation (27.10.2019)
 Under review at ISBI 2020. 
 
 Deep learning (DL) has arguably emerged as the method of choice for the detection and segmentation of biological structures in microscopy images. 
@@ -24,133 +24,62 @@ The following experiments can be run with the code.
 * U-Net baseline 
 * U-Net Sequential
 * U-Net finetune
-* U-net finetune sequential
+* U-Net finetune sequential
 * StarDist baseline
 * StarDist Sequential
 
-__Note:__ The relative paths are currently hardcoded!
-
-We created multiple scripts to setup experiments which will trigger individual cluster-jobs on falcon. The current developer directory is:
-`falcon:/projects/juglab/StarVoid`
-
-In there we have `StarVoid`, `StarVoid_alex`, `StarVoid_b`, `StarVoid_M`, `StarVoid_Manan` all of these are clones of this Git-Repository with different owners. Unfortunately we didn't found a better way to work with the owner-ship rights of the git-repository. 
-
-Additional important directories are `train_data` and `outdata`. All data used for training is loaded from `train_data` and all results are written to `outdata`.
+All the experiments listed above can be divided intow two module: denoising and segmentation. For U-Net base;line and StarDist, we only need segmentation modules while for all other schemes both denoising and segmentation modules are needed. We provide scripts to run both these tasks in a modular manner.
 
 ## Start an Experiment
-There are different `run_EXPERIMENT.py` scripts located in `falcon:/projects/juglab/StarVoid/StarVoid/cluster/`:
-* `run_finetune.py`:
-    This will start an experiment which will load a pre-trained network and fine-tune it.
-* `run_n2v.py`:
-    This will train standard denoising networks with the n2v training scheme.
-* `run_stardist.py`:
-    This will train standard stardist networks.
-* `run_starvoid.py`:
-    This will train segmentation networks. The last parameter `use_denoising` can turn denoising on or off. If `use_denoising=0` only the segmentation loss is computed. If `use_denoising=1` the segmentation and denoising loss are computed jointly. 
-   
-Each of these can be started via `python3 run_EXPERIMENT.py`. The following parameters are asked:
-* Experiment name: This is the name of the directory in `falcon:/projects/juglab/StarVoid/outdata/` to which all outputs of this experiment are written. We use the following naming convention: network_dataset_noise_additionalInfo_runX with:
-  - network in `{sd == stardist, su == sequential UNet aka W-Net, sv == starvoid}`
-  - dataset in `{DSB, CTC}`
-  - noise in `{n0, n20, n40}` corresponds to the train_data-set
-  - runX is used to indicate differently seeded runs of the same experiment. We usually use X as seed. 
-* Training data path: This will recursivly list all files in `falcon:/projects/juglab/StarVoid/train_data` and the user has to select the file containing all (100%) of the training data. (Training data has to be pre-prepared)
+We created multiple scripts to setup experiments which will trigger individual cluster-jobs on falcon. 
+There are different `run_EXPERIMENT.py` scripts located in `cluster/`:
+Before running any of the scripts, make sure to create `outdata`, `train_data`, `test_data` directories. All data used for training and testing will be loaded from `train_data` and `test_data` respectively and all results are written to `outdata`.
+The directory strcture should look like the following. 
+`outdata`
+`train_data`
+`test_data`
+`StarVoid/cluster/` (This is created just by cloning this repository). This means that the path `../../StarVoid/cluster`  points to a directory where `outdata`, `train_data` and `test_data` should be. After getting the directory structure, we are ready to run experiments. 
+
+---------------------------------------------Denoising with N2V---------------------------------------------------------------
+For running denoising with U-Net, run the script `run_starvoid.py` from `StarVoid/cluster` . To run this, simply use `python3 run_starvoid.py`. This will bring up a commad line interface displayin some parameters that need to be entered for training a N2V network. The following parameters are asked:
+* Experiment name: This is the name of the directory in `falcon:/projects/juglab/StarVoid/outdata/` to which all outputs of this experiment are written.
+* Scheme: Two options: denoising and segmentation come up. Choose denoising for running N2V.
+* Training data path: This will recursivly list all files in `train_data` and the user has to select the file containing all (100%) of the training data. (Training data has to be pre-prepared)
 * Test data path: Same for the test-data.
 * Use data augmentation during training
 * Random seed for training: This parameter asks for a seed to seed numpy.random. This allows for consistent training-data shuffling.
-* Training data fractions in x%: For each fraction a individual experiment is started and only x% of the training data are used. For each fraction a directory in `outdata/EXPERIMENT_NAME/` is created. 
-* Now a list of network architecture and training scheme parameters follow.
+* Training data fractions in x%: For each fraction a individual experiment is started and only x% of the training data are used. For each fraction a directory in `outdata/EXPERIMENT_NAME/` is created. Choose `100%` only for denoising as we want to use all noisy data for unsupervised denoising training.
+* Now a list of network architecture and training scheme parameters follow. For example, parameters like `number_of_epochs`, `steps_per_epoch`, `path_to_train_data`, `path_to_test_data`, `batch_size`, `depth`, etc. will be asked. We have set the parameters we used in the paper as default.
 
-For each experiment&training-fraction a directory `outdata/EXPERIMENT_NAME/train_X%` is created with the following directories/files:
+After the denoising is run, the script automatically creates a folder `outdata/EXPERIMENT_NAME/` and saves the best weights of N2V network in `outdata/EXPERIMENT_NAME/train_100.0/`. Also the denoised train data and test data are saved in `train_data` and `test_data` folders with name `N2V_EXPERIMENT_NAME_TrainVal.npz` and `N2V_EXPERIMENT_NAME_Test.npz`.
+
+---------------------------------------------Segmentation with U-Net----------------------------------------------------------
+Next, to run U-Net segmentation, again run `run_starvoid.py` as above but selecting `segmentation` for `Scheme` on command line interface. Choose appropriate parameters as described above.
+Similar to denoiisng, for each experiment&training-fraction a directory `outdata/EXPERIMENT_NAME/train_X%` is created with the following directories/files:
 * `scripts/`: This directory contains a copy of all scripts which are needed to run the experiment. In fact these are the scripts which got executed to produce the results.
 * `XX_model/`: This directory contains the network configuration, training history, last_weights.h5, best_weights.h5, and the tensorboard-events (if activated). XX is replaced by the part of the EXPERIMENT_NAME which comes before the first _ corresponding to the network-type.
 * `experiment.json`: This is the experiment config file which is written by the `run_EXPERIMENT.py`.
 * `experiment.log`: The log of this run.
 * `seg_scores.dat`: Contains the all seg-scores computed on the computed outputs for different threshold.
 * `best_scores.dat`: Contains the best seg-scores.
-* `backgroundXXX.tif`: Is the background segmentation result for the best seg-score.
-* `borderXXX.tif`: Is the border segmentation result for the best seg-score.
-* `foregroundXXX.tif`: Is the foreground segmentation result for the best seg-score. 
+* `backgroundXXX.tif`: Is the background segmentation result for the best average precision/seg-score.
+* `borderXXX.tif`: Is the border segmentation result for the best average precision/seg-score.
+* `foregroundXXX.tif`: Is the foreground segmentation result for the best average precision/seg-score. 
+* `foregroundXXX.tif`: Is the foreground segmentation result for the best average precision/seg-score.
+
+Using the segmentation procedure described above, U-Net baseline, U-Net sequential, U-Net finetune and U-Net Finetune sequential schemes can be run. It should be noted that for U-Net Sequential, U-Net finetune and U-Net Finetune sequential schemes, segmentation part must be performed after running denoising part in the manner described above. Just make sure to choose the right denoised train and test data when prompted by the script on the command line for U-Net Sequential and U-Net Finetune sequential schemes. Also, for U-Net Finetune and U-Net Finetune sequential schemes, the command line interface will prompt to enter the path to the weights of N2V network for initialization of segmentation network. Please select the appropriate path.
+
+---------------------------------------------Segmentation with StarDist-------------------------------------------------------
+Running segmentation with StarDist is similar to segmentation with U-Net but using the script `run_stardist.py` and choosing parameters from command line interface when prompted as described above. For running StarDist Sequential, first run denosing as described above, then run StarDist choosing the denoised train and test data when prompted by the command line interface.
 
 ## Experiment Evaluation
 To evaluate and compare results of multiple experiments we have two scripts:
-* `falcon:/projects/juglab/StarVoid/StarVoid/cluster/plot_seg_scores.py`:
-    This script will plot the best seg-scores over all available train-data fractions as a line-plot. To call this script move to `falcon:/projects/juglab/StarVoid/outdat/` and call `python3 ../StarVoid/cluster/plot_seg_scores.py -g path/to/gt/seg-data -out name_of_the_plot.png experiment_name1 experiment_name2` the last n parameters are all the experiments which should be plotted.
-* `falcon:/projects/juglab/StarVoid/StarVoid/cluster/plot_avg_seg_scores.py`:
+
+* `falcon:/projects/juglab/StarVoid/StarVoid/cluster/plot_avg_precision_scores.py`:
     This script will plot the average best seg-scores of multiple runs over all available train-data fractions as a line-plot. To call this script move to `falcon:/projects/juglab/StarVoid/outdat/` and call `python3 ../StarVoid/cluster/plot_seg_scores.py -config avg_plot.json`. The provied `avg_plot.json` contains a dictionary with the following parameters:
     - `"exp_name" : ["exp_name1", "exp_name2"]` -> List of the averaging experiments. These names have to appear again in this json-file defining which experiment-runs have to be averaged.
     - `"exp_name1" : ["EXPERIMENTNAME_run0", "EXPERIMENTNAME_run1"]` -> List of all runs that have to be averaged. 
     - `"gt" : "../path/to/gt/"`
     - `"output" : "name_of_plot.png"`
-# Noise2Seg Documentation (27.05.2019)
-An overview of the Noise2Seg (StarVoid/VoidSeg) project. This branch contains the working implementation of VoidSeg which is used for the current research regarding the question if N2V training could help the training of a 3-class segmentation network. 
-
-__Note:__ The relative paths are currently hardcoded!
-
-We created multiple scripts to setup experiments which will trigger individual cluster-jobs on falcon. The current developer directory is:
-`falcon:/projects/juglab/StarVoid`
-
-In there we have `StarVoid`, `StarVoid_alex`, `StarVoid_b`, `StarVoid_M`, `StarVoid_Manan` all of these are clones of this Git-Repository with different owners. Unfortunately we didn't found a better way to work with the owner-ship rights of the git-repository. 
-
-Additional important directories are `train_data` and `outdata`. All data used for training is loaded from `train_data` and all results are written to `outdata`.
-
-## Start an Experiment
-There are different `run_EXPERIMENT.py` scripts located in `falcon:/projects/juglab/StarVoid/StarVoid/cluster/`:
-* `run_finetune.py`:
-    This will start an experiment which will load a pre-trained network and fine-tune it.
-* `run_n2v.py`:
-    This will train standard denoising networks with the n2v training scheme.
-* `run_stardist.py`:
-    This will train standard stardist networks.
-* `run_starvoid.py`:
-    This will train segmentation networks. The last parameter `use_denoising` can turn denoising on or off. If `use_denoising=0` only the segmentation loss is computed. If `use_denoising=1` the segmentation and denoising loss are computed jointly. 
-   
-Each of these can be started via `python3 run_EXPERIMENT.py`. The following parameters are asked:
-* Experiment name: This is the name of the directory in `falcon:/projects/juglab/StarVoid/outdata/` to which all outputs of this experiment are written. We use the following naming convention: network_dataset_noise_additionalInfo_runX with:
-  - network in `{sd == stardist, su == sequential UNet aka W-Net, sv == starvoid}`
-  - dataset in `{DSB, CTC}`
-  - noise in `{n0, n20, n40}` corresponds to the train_data-set
-  - runX is used to indicate differently seeded runs of the same experiment. We usually use X as seed. 
-* Training data path: This will recursivly list all files in `falcon:/projects/juglab/StarVoid/train_data` and the user has to select the file containing all (100%) of the training data. (Training data has to be pre-prepared)
-* Test data path: Same for the test-data.
-* Use data augmentation during training
-* Random seed for training: This parameter asks for a seed to seed numpy.random. This allows for consistent training-data shuffling.
-* Training data fractions in x%: For each fraction a individual experiment is started and only x% of the training data are used. For each fraction a directory in `outdata/EXPERIMENT_NAME/` is created. 
-* Now a list of network architecture and training scheme parameters follow.
-
-For each experiment&training-fraction a directory `outdata/EXPERIMENT_NAME/train_X%` is created with the following directories/files:
-* `scripts/`: This directory contains a copy of all scripts which are needed to run the experiment. In fact these are the scripts which got executed to produce the results.
-* `XX_model/`: This directory contains the network configuration, training history, last_weights.h5, best_weights.h5, and the tensorboard-events (if activated). XX is replaced by the part of the EXPERIMENT_NAME which comes before the first _ corresponding to the network-type.
-* `experiment.json`: This is the experiment config file which is written by the `run_EXPERIMENT.py`.
-* `experiment.log`: The log of this run.
-* `seg_scores.dat`: Contains the all seg-scores computed on the computed outputs for different threshold.
-* `best_scores.dat`: Contains the best seg-scores.
-* `backgroundXXX.tif`: Is the background segmentation result for the best seg-score.
-* `borderXXX.tif`: Is the border segmentation result for the best seg-score.
-* `foregroundXXX.tif`: Is the foreground segmentation result for the best seg-score. 
-
-## Experiment Evaluation
-To evaluate and compare results of multiple experiments we have two scripts:
-* `falcon:/projects/juglab/StarVoid/StarVoid/cluster/plot_seg_scores.py`:
-    This script will plot the best seg-scores over all available train-data fractions as a line-plot. To call this script move to `falcon:/projects/juglab/StarVoid/outdat/` and call `python3 ../StarVoid/cluster/plot_seg_scores.py -g path/to/gt/seg-data -out name_of_the_plot.png experiment_name1 experiment_name2` the last n parameters are all the experiments which should be plotted.
-* `falcon:/projects/juglab/StarVoid/StarVoid/cluster/plot_avg_seg_scores.py`:
-    This script will plot the average best seg-scores of multiple runs over all available train-data fractions as a line-plot. To call this script move to `falcon:/projects/juglab/StarVoid/outdat/` and call `python3 ../StarVoid/cluster/plot_seg_scores.py -config avg_plot.json`. The provied `avg_plot.json` contains a dictionary with the following parameters:
-    - `"exp_name" : ["exp_name1", "exp_name2"]` -> List of the averaging experiments. These names have to appear again in this json-file defining which experiment-runs have to be averaged.
-    - `"exp_name1" : ["EXPERIMENTNAME_run0", "EXPERIMENTNAME_run1"]` -> List of all runs that have to be averaged. 
-    - `"gt" : "../path/to/gt/"`
-    - `"output" : "name_of_plot.png"`
-    
-## Finetuning schemes
-
-In  order to improve segmentation, we decided to initialize our segmentation networks (both U-Net and W-Net) with Noise2Void trained denoising weights. Then the segmentation network is trained on segmentation loss under the following schemes:
-For U-Net:
-
-Scheme 1: Retraining all weights of segmentation network with n2v initialization. 
-Scheme 2: Freezing the weights of the downsampling (encoder) part of the U-Net and the retraining only upsampling (decoder) part.
-Scheme 3: Freezing all weights except the last layer
-Scheme 4: Freezing all weights except the last layer for 10 epochs and then unfreezing all and retraining for 90 more epochs
-
-For W-Net:
-
-Coming soon...
+* `falcon:/projects/juglab/StarVoid/StarVoid/cluster/plot_avg_seg_scores.py`: This is similar to plotting average precision scores as described above with the evaluation metric used being SEG.
 
