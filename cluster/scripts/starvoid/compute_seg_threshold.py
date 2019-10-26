@@ -80,7 +80,7 @@ mean, std = np.mean(X_train), np.std(X_train)
 X_val = train_files['X_val']
 Y_val = train_files['Y_val']
 X_val = normalize(X_val, mean, std)
-model = CARE(None, name=exp_params['model_name'], basedir='')
+model = CARE(None, name=exp_params['model_name']+str('_seg'), basedir='')
 
 print('Compute best threshold:')
 seg_scores = []

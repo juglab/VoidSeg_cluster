@@ -2,18 +2,16 @@
 from os.path import join
 import pickle
 
-from csbdeep.models import Config, CARE
+from stardist import Config, StarDist
+from csbdeep.utils import Path, normalize
+from stardist import dist_to_coord, non_maximum_suppression, polygons_to_label
 import numpy as np
 import json
+import sys
 
 from scipy import ndimage
 
 from numba import jit
-from keras.layers import Input, Conv2D, Conv3D, Activation, Lambda
-from keras.models import Model
-from keras.layers.merge import Add, Concatenate
-from csbdeep.internals.blocks import unet_block
-from csbdeep.utils import _raise, backend_channels_last
 
 @jit
 def pixel_sharing_bipartite(lab1, lab2):
@@ -68,74 +66,37 @@ def seg(lab_gt, lab, partial_dataset=False):
         return n_matched / n_gt
 
 
-def normalize(img, mean, std):
-    zero_mean = img - mean
-    return zero_mean/std
-
-def denormalize(x, mean, std):
-    return x*std + mean
-
-
-class CARE_SEQ(CARE):
-    def _build(self):
-        def seq_unet(input_shape, last_activation, n_depth=2, n_filter_base=32, kernel_size=(3,3),
-             n_conv_per_depth=2, activation="relu", batch_norm=True, pool_size=(2,2),
-             n_channel_out=4, eps_scale=1e-3):
-            if last_activation is None:
-                raise ValueError("last activation has to be given (e.g. 'sigmoid', 'relu')!")
-
-            all((s % 2 == 1 for s in kernel_size)) or _raise(ValueError('kernel size should be odd in all dimensions.'))
-
-            channel_axis = -1 if backend_channels_last() else 1
-
-            n_dim = len(kernel_size)
-            conv = Conv2D if n_dim==2 else Conv3D
-
-            input = Input(input_shape, name = "input")
-            unet = unet_block(2, 32, (3,3),
-                              activation="relu", dropout=False, batch_norm=True,
-                              n_conv_per_depth=2, pool=(2,2), prefix='n2v')(input)
-
-            final_n2v = conv(1, (1,)*n_dim, activation='linear')(unet)
-
-            unet_seg = unet_block(2, 32, (3,3),
-                              activation="relu", dropout=False, batch_norm=True,
-                              n_conv_per_depth=2, pool=(2,2), prefix='seg')(unet)
-
-            final_seg = conv(3, (1,)*n_dim, activation='linear')(unet_seg)
-
-            final_n2v = Activation(activation=last_activation)(final_n2v)
-            final_seg = Activation(activation=last_activation)(final_seg)
-
-            final = Concatenate(axis=channel_axis)([final_n2v, final_seg])
-            return Model(inputs=input, outputs=final)
-        return seq_unet((None, None, 1), 'linear')
-
-
 with open('experiment.json', 'r') as f:
     exp_params = json.load(f)
+print("Opened json!")
 
 train_files = np.load(join('..', '..', '..', *exp_params['train_path'].split('/')[4:]))
-X_train = train_files['X_train']
-mean, std = np.mean(X_train), np.std(X_train)
+# X_train = train_files['X_train']
+# mean, std = np.mean(X_train), np.std(X_train)
 X_val = train_files['X_val']
 Y_val = train_files['Y_val']
-X_val = normalize(X_val, mean, std)
-model = CARE_SEQ(None, name=exp_params['model_name'], basedir='')
+# X_val = normalize(X_val, mean, std)
+model = StarDist(None, name=exp_params['model_name'], basedir='')
 
 print('Compute best threshold:')
+
 seg_scores = []
-for ts in np.linspace(0, 1, 21):
+ts_range = np.array([0.000000001, 0.00000001, 0.0000001, 0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1 ])
+for ts in ts_range:
+# for ts in np.linspace(0, 1, 21):
+    print(ts)
+    sys.stdout.flush()
     seg_score = 0
     for idx in range(X_val.shape[0]):
+        print(idx)
+        sys.stdout.flush()
         img, gt = X_val[idx], Y_val[idx]
-        prediction = model.predict(img, axes='YX', normalizer=None)
-        prediction_exp = np.exp(prediction[..., 1:])
-        prediction_seg = prediction_exp / np.sum(prediction_exp, axis=2)[..., np.newaxis]
-        prediction_fg = prediction_seg[..., 1]
-        pred_thresholded = prediction_fg > ts
-        labels, _ = ndimage.label(pred_thresholded)
-        tmp_score = seg(gt, labels)
+        img = normalize(img, 1, 99.8)
+        probability, distance = model.predict(img)
+        coordinates = dist_to_coord(distance)
+        point = non_maximum_suppression(coordinates, probability, prob_thresh=ts)
+        label = polygons_to_label(coordinates, probability, point)
+        tmp_score = seg(gt, label)
         if not np.isnan(tmp_score):
             seg_score += tmp_score
 

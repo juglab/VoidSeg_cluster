@@ -43,15 +43,15 @@ class TrainFracValidator(Validator):
         values = document.text.split(',')
         for v in values:
             try:
-                int_v = int(v)
-                if int_v < 1 or int_v > 100:
+                float_v = float(v)
+                if float_v < 0 or float_v > 100:
                     raise ValidationError(
-                        message='Enter a comma separated list of integers between 1 and 100.',
+                        message='Enter a comma separated list of floats between 0 and 100.',
                         cursor_position=len(document.text)
                     )
             except ValueError:
                 raise ValidationError(
-                    message='Enter a list of integers between 1 and 100.',
+                    message='Enter a list of floats between 0 and 100.',
                     cursor_position=len(document.text)
                 )
 
@@ -97,12 +97,25 @@ def main():
                 'default': True
             },
             {
+                'type': 'confirm',
+                'message': 'Use random seeding during training?',
+                'name': 'is_seeding',
+                'default': True
+            },
+            {
+                'type': 'input',
+                'name': 'random_seed',
+                'message': 'Random seed for training',
+                'default': '42',
+                'filter': lambda val: int(val)
+            },
+            {
                 'type': 'input',
                 'name': 'train_frac',
                 'message': 'Training data fractions in x%:',
-                'default': '1,2,3,5,10,20,30,40,50,60,70,80,90,100',
+                'default': '0.25,0.5,1,2,4,8,16,32,64,100',
                 'validate': TrainFracValidator,
-                'filter': lambda val: [int(x) for x in val.split(',')]
+                'filter': lambda val: [float(x) for x in val.split(',')]
             },
             {
                 'type': 'input',
@@ -143,7 +156,7 @@ def main():
                 'type': 'input',
                 'name': 'train_batch_size',
                 'message': 'train_batch_size',
-                'default': '4',
+                'default': '128',
                 'validate': lambda val: int(val) > 0,
                 'filter': lambda val: int(val)
             },
@@ -178,7 +191,7 @@ def main():
                 'type': 'input',
                 'name': 'train_learning_rate',
                 'message': 'train_learning_rate',
-                'default': '0.0003',
+                'default': '0.0004',
                 'validate': lambda val: float(val) > 0,
                 'filter': lambda val: float(val)
             },
@@ -186,7 +199,7 @@ def main():
                 'type': 'input',
                 'name': 'train_patch_size',
                 'message': 'train_patch_size',
-                'default': '128, 128',
+                'default': '64, 64',
                 'filter': lambda val: tuple([int(x.strip()) for x in val.split(',')])
             },
             {
@@ -195,6 +208,13 @@ def main():
                 'message': 'train_reduce_lr',
                 'default': 'factor: 0.5, patience: 10',
                 'filter': lambda val: {tmp.split(':')[0].strip() : float(tmp.split(':')[1].strip()) for tmp in val.split(',')}
+            },
+            {
+                'type': 'list',
+                'name': 'unet_batch_norm',
+                'message': 'unet_batch_norm',
+                'choices': ['True', 'False'],
+                'filter': lambda val: val == 'False'
             },
             {
                 'type': 'list',
@@ -229,7 +249,7 @@ def main():
                 'type': 'input',
                 'name': 'unet_n_depth',
                 'message': 'unet_n_depth',
-                'default': '3',
+                'default': '2',
                 'filter': lambda val: int(val)
             },
             {
@@ -243,24 +263,47 @@ def main():
 
         config = prompt(questions)
         pwd = os.getcwd()
-        for p in config['train_frac']:
-            os.chdir(pwd)
-            exp_conf = {
-                'exp_name' : config['exp_name'],
-                'train_path': config['train_path'],
-                'test_path': config['test_path'],
-                'augment': config['augment'],
-                'train_frac': p,
-                'base_dir': join('../..', config['exp_name'], 'train_'+str(p)),
-                'model_name': config['exp_name'].split('_')[0] + '_model'
-            }
+        for run_idx in [1,2,3,4,5]:
+            for p in config['train_frac']:
+                if config['is_seeding']:
+                    os.chdir(pwd)
+                    run_name = config['exp_name'] + '_run' + str(run_idx)
+                    exp_conf = {
+                        'exp_name' : run_name,
+                        'train_path': config['train_path'],
+                        'test_path': config['test_path'],
+                        'is_seeding': config['is_seeding'],
+                        'random_seed': run_idx,
+                        'augment': config['augment'],
+                        'train_frac': p,
+                        'base_dir': join('../..', run_name, 'train_'+str(p)),
+                        'model_name': config['exp_name'].split('_')[0] + '_model'
+                    }
 
-            net_conf = {}
-            for k in config.keys():
-                if k not in exp_conf.keys():
-                    net_conf[k] = config[k]
+                    net_conf = {}
+                    for k in config.keys():
+                        if k not in exp_conf.keys():
+                            net_conf[k] = config[k]
+                else:
+                    os.chdir(pwd)
+                    exp_conf = {
+                        'exp_name' : config['exp_name'],
+                        'train_path': config['train_path'],
+                        'test_path': config['test_path'],
+                        'is_seeding': config['is_seeding'],
+                        'random_seed': config['random_seed'],
+                        'augment': config['augment'],
+                        'train_frac': p,
+                        'base_dir': join('../..', config['exp_name'], 'train_'+str(p)),
+                        'model_name': config['exp_name'].split('_')[0] + '_model'
+                    }
 
-            start_experiment(exp_conf, net_conf, 'train_'+str(p))
+                    net_conf = {}
+                    for k in config.keys():
+                        if k not in exp_conf.keys():
+                            net_conf[k] = config[k]
+
+                start_experiment(exp_conf, net_conf, 'train_'+str(p))
 
 
 def start_experiment(exp_conf, net_conf, run_dir):
@@ -307,6 +350,7 @@ def run(exp_conf, net_conf, run_dir):
     os.chdir(join('../..', 'outdata', exp_conf['exp_name'], run_dir))
     print('Current directory:', os.getcwd())
     cmd = "sbatch --exclude=r02n01 -p gpu --gres=gpu:1 --mem-per-cpu 256000 -t 48:00:00 --export=ALL -J StarVoid -o "+log_file+" scripts/stardist/start_job.sh"
+ #    cmd = "scripts/stardist/start_job.sh"
     print(cmd)
     os.system(cmd)
 

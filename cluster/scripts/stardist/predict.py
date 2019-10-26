@@ -11,6 +11,7 @@ from stardist import dist_to_coord, non_maximum_suppression, polygons_to_label
 from stardist import random_label_cmap, draw_polygons, sample_points
 from stardist import Config, StarDist
 
+import pickle
 import json
 from os.path import join
 from skimage import io
@@ -23,6 +24,9 @@ files = np.load(exp_params["test_path"])
 X_test = files['X_test']
 model_no_sc = StarDist(None, name = exp_params['model_name'], basedir = exp_params['base_dir'])
 
+with open('best_score.dat', 'rb') as best_score_file:
+    ts = pickle.load(best_score_file)[0]
+print('Use threshold =', ts)
 
 img = []
 prob = []
@@ -36,7 +40,7 @@ for i in range(X_test.shape[0]):
     image = normalize(X_test[i],1,99.8)
     probability, distance = model_no_sc.predict(image)
     coordinates = dist_to_coord(distance)
-    point = non_maximum_suppression(coordinates,probability,prob_thresh=0.4)
+    point = non_maximum_suppression(coordinates,probability,prob_thresh=ts)
     label = polygons_to_label(coordinates,probability,point)
 
     img.append(image)
@@ -47,4 +51,4 @@ for i in range(X_test.shape[0]):
     labels.append(label)
 
 for i in range(0,len(img)):
-    io.imsave(join(exp_params['base_dir'], str(i).zfill(3)+'.tif'), labels[i])
+    io.imsave(join(exp_params['base_dir'], 'mask'+ str(i).zfill(3)+'.tif'), labels[i].astype(np.int16))
