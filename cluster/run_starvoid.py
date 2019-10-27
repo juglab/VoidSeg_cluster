@@ -334,7 +334,8 @@ def main():
                 'type':'input',
                 'name':'path_to_trained_weights',
                 'message':'path_to_trained_weights',
-                'default':'/lustre/projects/juglab/StarVoid/outdata/***/train_100.0/***/weights_best.h5'
+                'default':'/lustre/projects/juglab/StarVoid/outdata/***/train_100.0/***/weights_best.h5',
+                'when': lambda answers: answers['scheme'] == 'segmentation'
             }
         ]
 
