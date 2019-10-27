@@ -352,7 +352,10 @@ def main():
                 if config['is_seeding']:
                     os.chdir(pwd)
                     run_name = config['exp_name']+'_run'+str(run_idx)
-                    trained_weights = config['path_to_trained_weights']
+                    if('path_to_trained_weights' in config):
+                        trained_weights = config['path_to_trained_weights']
+                    else:
+                        trained_weights = ''
 
                     exp_conf, n2v_net, ini_net, seg_net= create_configs(config, run_name, trained_weights, seed=run_idx, train_frac=p)
 
