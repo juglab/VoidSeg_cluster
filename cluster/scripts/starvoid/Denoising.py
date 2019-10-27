@@ -59,9 +59,8 @@ class Denoising(Scheme.Scheme):
         clean_train, clean_val, clean_test = self.predict_denoise(n2v_model, n2v_train_data, n2v_test_data, mean_std_denoise)
         clean_train = clean_train[:, :, :, 0]
         clean_val = clean_val[:, :, :, 0]
-        if(clean_test.ndim == clean_train.ndim):
-            if (clean_test.shape[1] == clean_train.shape[1] and clean_test.shape[2] == clean_train.shape[2]): #TODO make generic to cover case when test data and train data have same shape
-                clean_test = clean_test[:,:,:,0]
+        if (clean_test.shape[1] == clean_train.shape[1] and clean_test.shape[2] == clean_train.shape[2]): #TODO make generic to cover case when test data and train data have same shape
+            clean_test = clean_test[:,:,:,0]
         else:
              for test_img_num in range(clean_test.shape[0]):  # Since test set has images of different shapes, zeroing out segmentation chnnel is done individually for each image
                  clean_test[test_img_num] = clean_test[test_img_num][:, :, 0]   
