@@ -10,8 +10,8 @@ Using two state-of-the-art baseline methods, U-Net and StarDist, we show that ou
 An overview of the Noise2Seg (StarVoid/VoidSeg) project. This branch contains the working implementation of VoidSeg which is used for the current research regarding the question if N2V training could help the training of a 3-class segmentation network. 
 
 ## Datasets used
-All data used for the experiments can be found at https://owncloud.mpi-cbg.de/index.php/s/giCEfFymkuM5N7j
-The link contains two folders namely- `DSB` and `BBBC`. Inside each folder, there are two subfolders named (i)`train_data` containing training and validation data and (ii) `test_data` containing test data.
+All data used for the experiments can be found at https://owncloud.mpi-cbg.de/index.php/s/P4qDOyJEnsaWK55
+The link contains two folders namely- `DSB` and `BBBC`. Inside each folder, there are three subfolders named (i)`train_data` containing training and validation data, (ii) `test_data` containing test data, and (iii) `seg_gt` containing ground truth instance segmentations for test data.
 For DSB dataset, we use noise levels n10, n20 and n40 (where n10 represents corruption of clean (original) microscopy images with Gaussian noise of mean 0 and std 10). For BBBC dataset, we use noise levels n150 and n200. 
 
 For example, the training and validation data for noise level n10 for DSB dataset is located in `DSB/train_data/DSB2018_TrainVal10.npz`. 
